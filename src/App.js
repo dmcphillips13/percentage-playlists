@@ -8,9 +8,9 @@ function App() {
   const AUTH_ENDPOINT = 'https://accounts.spotify.com/authorize';
   const RESPONSE_TYPE = 'token';
 
+  const [playlists, setPlaylists] = useState([]);
   const [token, setToken] = useState('');
-  const [searchKey, setSearchKey] = useState('');
-  const [artists, setArtists] = useState([]);
+  const [userId, setUserId] = useState(null);
 
   useEffect(() => {
     const hash = window.location.hash;
@@ -28,60 +28,69 @@ function App() {
     }
 
     setToken(token);
-  }, []);
+
+    async function getUserId() {
+      const { data } = await axios.get(`https://api.spotify.com/v1/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setUserId(data.id);
+    }
+
+    if (token) {
+      getUserId();
+    }
+
+    const getPlaylists = async () => {
+      const { data } = await axios.get(
+        `https://api.spotify.com/v1/users/${userId}/playlists`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setPlaylists(data.items);
+    };
+
+    if (userId) {
+      getPlaylists();
+    }
+  }, [userId]);
 
   const logout = () => {
     setToken('');
     window.localStorage.removeItem('token');
   };
 
-  const searchArtists = async (e) => {
-    e.preventDefault();
-    const { data } = await axios.get('https://api.spotify.com/v1/search', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      params: {
-        q: searchKey,
-        type: 'artist',
-      },
-    });
+  const renderPlaylists = () => {
+    if (!playlists.length) {
+      return;
+    }
 
-    setArtists(data.artists.items);
-  };
-
-  const renderArtists = () => {
-    return artists.map((artist) => (
-      <div key={artist.id}>
-        {artist.images.length ? (
-          <img width={'100%'} src={artist.images[0].url} alt="" />
-        ) : (
-          <div>No Image</div>
-        )}
-        {artist.name}
-      </div>
+    return playlists.map((playlist) => (
+      <option key={playlist.id} value={playlist.id}>
+        {playlist.name}
+      </option>
     ));
   };
 
   return (
     <div className="App">
-      <header className="App-header">
-        <h1>Spotify React</h1>
-        {!token ? (
-          <a
-            href={`${AUTH_ENDPOINT}?client_id=${process.env.REACT_APP_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=${RESPONSE_TYPE}`}
-          >
-            Login to Spotify
-          </a>
-        ) : (
-          <button onClick={logout}>Logout</button>
-        )}
-      </header>
-      <form onSubmit={searchArtists}>
-        <input type="text" onChange={(e) => setSearchKey(e.target.value)} />
-        <button type={'submit'}>Search</button>
-      </form>
-      {renderArtists()}
+      <h1>Percentage Playlists</h1>
+      {!token ? (
+        <a
+          href={`${AUTH_ENDPOINT}?client_id=${process.env.REACT_APP_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=${RESPONSE_TYPE}`}
+        >
+          Login to Spotify
+        </a>
+      ) : (
+        <button onClick={logout}>Logout</button>
+      )}
+      {userId ? <select>{renderPlaylists()}</select> : null}
     </div>
   );
 }
