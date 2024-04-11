@@ -11,6 +11,7 @@ function App() {
   const [playlists, setPlaylists] = useState([]);
   const [token, setToken] = useState('');
   const [userId, setUserId] = useState(null);
+  const [percentage, setPercentage] = useState('');
 
   useEffect(() => {
     const hash = window.location.hash;
@@ -91,6 +92,7 @@ function App() {
         <button onClick={logout}>Logout</button>
       )}
       {userId ? <select>{renderPlaylists()}</select> : null}
+      <input type="text" onChange={(e) => setPercentage(e.target.value)} />
     </div>
   );
 }
