@@ -4,10 +4,18 @@ const CLIENT_ID = process.env.REACT_APP_SPOTIFY_CLIENT_ID;
 const REDIRECT_URI = 'http://localhost:3000/callback';
 const AUTH_ENDPOINT = 'https://accounts.spotify.com/authorize';
 const RESPONSE_TYPE = 'token';
-const SCOPES = ['playlist-read-private', 'playlist-read-collaborative'];
+// Updated scopes to include playback control
+const SCOPES = [
+  'playlist-read-private',
+  'playlist-read-collaborative',
+  'user-read-playback-state',
+  'user-modify-playback-state'
+];
 
 export default function Login() {
-  const loginUrl = `${AUTH_ENDPOINT}?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&scope=${SCOPES.join('%20')}&response_type=${RESPONSE_TYPE}`;
+  const loginUrl = `${AUTH_ENDPOINT}?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&scope=${SCOPES.join(
+    '%20'
+  )}&response_type=${RESPONSE_TYPE}`;
 
   return (
     <a

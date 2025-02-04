@@ -10,6 +10,9 @@ function App() {
   const [user, setUser] = useState(null);
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
   const [selectedTrack, setSelectedTrack] = useState(null);
+  // Playback state: which track is playing and whether it is playing
+  const [playingTrackId, setPlayingTrackId] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   // Extract token from localStorage or URL hash on app load
   useEffect(() => {
@@ -33,8 +36,8 @@ function App() {
     if (token) {
       fetch('https://api.spotify.com/v1/me', {
         headers: {
-          Authorization: `Bearer ${token}`,
-        },
+          Authorization: `Bearer ${token}`
+        }
       })
         .then((response) => response.json())
         .then((data) => {
@@ -49,8 +52,8 @@ function App() {
     if (token && !selectedPlaylist && !selectedTrack) {
       fetch('https://api.spotify.com/v1/me/playlists', {
         headers: {
-          Authorization: `Bearer ${token}`,
-        },
+          Authorization: `Bearer ${token}`
+        }
       })
         .then((response) => response.json())
         .then((data) => {
@@ -65,6 +68,38 @@ function App() {
         });
     }
   }, [token, selectedPlaylist, selectedTrack]);
+
+  // Function to control playback via Spotify API
+  const handlePlayPause = (track, action) => {
+    if (action === 'play') {
+      fetch('https://api.spotify.com/v1/me/player/play', {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          uris: [track.uri]
+        })
+      })
+        .then(() => {
+          setPlayingTrackId(track.id);
+          setIsPlaying(true);
+        })
+        .catch((err) => console.error('Error playing track:', err));
+    } else if (action === 'pause') {
+      fetch('https://api.spotify.com/v1/me/player/pause', {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+        .then(() => {
+          setIsPlaying(false);
+        })
+        .catch((err) => console.error('Error pausing track:', err));
+    }
+  };
 
   // Logout clears all view states
   const logout = () => {
@@ -137,6 +172,9 @@ function App() {
               userPlaylists={userOwnedPlaylists}
               onPlaylistSelect={handleSongPlaylistSelect}
               onBack={handleBackFromSongPlaylists}
+              onPlayPause={handlePlayPause}
+              playingTrackId={playingTrackId}
+              isPlaying={isPlaying}
             />
           ) : selectedPlaylist ? (
             <PlaylistDetail
@@ -144,6 +182,9 @@ function App() {
               playlistId={selectedPlaylist.id}
               goBack={handleBackFromPlaylistDetail}
               onTrackClick={handleTrackClick}
+              onPlayPause={handlePlayPause}
+              playingTrackId={playingTrackId}
+              isPlaying={isPlaying}
             />
           ) : (
             <Playlists playlists={playlists} onPlaylistClick={handlePlaylistClick} />

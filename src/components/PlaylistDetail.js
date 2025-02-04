@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from 'react';
 
-export default function PlaylistDetail({ token, playlistId, goBack, onTrackClick }) {
+export default function PlaylistDetail({
+  token,
+  playlistId,
+  goBack,
+  onTrackClick,
+  onPlayPause,
+  playingTrackId,
+  isPlaying
+}) {
   const [tracks, setTracks] = useState([]);
   const [playlistName, setPlaylistName] = useState('');
 
@@ -8,8 +16,8 @@ export default function PlaylistDetail({ token, playlistId, goBack, onTrackClick
     if (token && playlistId) {
       fetch(`https://api.spotify.com/v1/playlists/${playlistId}`, {
         headers: {
-          Authorization: `Bearer ${token}`,
-        },
+          Authorization: `Bearer ${token}`
+        }
       })
         .then((response) => response.json())
         .then((data) => {
@@ -44,7 +52,7 @@ export default function PlaylistDetail({ token, playlistId, goBack, onTrackClick
             const track = item.track;
             if (!track) return null;
             return (
-              <li key={track.id || index} style={{ marginBottom: '10px' }}>
+              <li key={track.id || index} style={{ marginBottom: '10px', display: 'flex', alignItems: 'center' }}>
                 <a
                   href="#"
                   onClick={(e) => {
@@ -59,6 +67,26 @@ export default function PlaylistDetail({ token, playlistId, goBack, onTrackClick
                 >
                   {track.name} — {track.artists.map((artist) => artist.name).join(', ')}
                 </a>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (playingTrackId === track.id && isPlaying) {
+                      onPlayPause(track, 'pause');
+                    } else {
+                      onPlayPause(track, 'play');
+                    }
+                  }}
+                  style={{
+                    marginLeft: '10px',
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#1DB954',
+                    cursor: 'pointer',
+                    fontSize: '16px'
+                  }}
+                >
+                  {(playingTrackId === track.id && isPlaying) ? 'Pause' : 'Play'}
+                </button>
               </li>
             );
           })}
