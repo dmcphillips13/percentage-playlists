@@ -1,4 +1,3 @@
-// src/components/PlaylistDetail.js
 import React, { useState, useEffect } from 'react';
 
 export default function PlaylistDetail({ token, playlistId, goBack, onTrackClick }) {
@@ -25,24 +24,38 @@ export default function PlaylistDetail({ token, playlistId, goBack, onTrackClick
 
   return (
     <div>
-      <button onClick={goBack} style={{ marginBottom: '20px' }}>
+      <button
+        onClick={goBack}
+        style={{
+          background: 'transparent',
+          border: 'none',
+          color: '#1DB954',
+          fontSize: '16px',
+          cursor: 'pointer',
+          marginBottom: '20px'
+        }}
+      >
         &larr; Back to Playlists
       </button>
-      <h2>{playlistName}</h2>
+      <h2 style={{ color: '#fff' }}>{playlistName}</h2>
       {tracks.length > 0 ? (
-        <ul>
+        <ul style={{ listStyle: 'none', padding: 0 }}>
           {tracks.map((item, index) => {
             const track = item.track;
             if (!track) return null;
             return (
-              <li key={track.id || index}>
+              <li key={track.id || index} style={{ marginBottom: '10px' }}>
                 <a
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
                     onTrackClick(track);
                   }}
-                  style={{ textDecoration: 'none', color: '#1DB954' }}
+                  style={{
+                    textDecoration: 'none',
+                    color: '#1DB954',
+                    fontSize: '16px'
+                  }}
                 >
                   {track.name} — {track.artists.map((artist) => artist.name).join(', ')}
                 </a>
@@ -51,7 +64,7 @@ export default function PlaylistDetail({ token, playlistId, goBack, onTrackClick
           })}
         </ul>
       ) : (
-        <p>No tracks found.</p>
+        <p style={{ color: '#bbb' }}>No tracks found.</p>
       )}
     </div>
   );

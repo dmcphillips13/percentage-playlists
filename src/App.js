@@ -1,4 +1,3 @@
-// src/App.js
 import React, { useState, useEffect } from 'react';
 import Login from './components/Login';
 import Playlists from './components/Playlists';
@@ -103,13 +102,32 @@ function App() {
     : playlists;
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-      <h1>My Spotify Playlists</h1>
+    <div
+      style={{
+        background: '#191414',
+        color: '#fff',
+        minHeight: '100vh',
+        padding: '20px',
+        fontFamily: 'Helvetica, Arial, sans-serif'
+      }}
+    >
+      <h1 style={{ marginBottom: '20px', color: '#fff' }}>My Spotify Playlists</h1>
       {!token ? (
         <Login />
       ) : (
         <>
-          <button onClick={logout} style={{ marginBottom: '20px' }}>
+          <button
+            onClick={logout}
+            style={{
+              background: 'transparent',
+              border: '1px solid #1DB954',
+              borderRadius: '4px',
+              color: '#1DB954',
+              padding: '8px 12px',
+              cursor: 'pointer',
+              marginBottom: '20px'
+            }}
+          >
             Logout
           </button>
           {selectedTrack ? (

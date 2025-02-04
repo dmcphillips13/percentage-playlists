@@ -1,4 +1,3 @@
-// src/components/SongPlaylists.js
 import React, { useState, useEffect } from 'react';
 
 export default function SongPlaylists({ token, track, userPlaylists, onPlaylistSelect, onBack }) {
@@ -44,23 +43,37 @@ export default function SongPlaylists({ token, track, userPlaylists, onPlaylistS
 
   return (
     <div>
-      <button onClick={onBack} style={{ marginBottom: '20px' }}>
+      <button
+        onClick={onBack}
+        style={{
+          background: 'transparent',
+          border: 'none',
+          color: '#1DB954',
+          fontSize: '16px',
+          cursor: 'pointer',
+          marginBottom: '20px'
+        }}
+      >
         &larr; Back
       </button>
-      <h2>Playlists including "{track.name}"</h2>
+      <h2 style={{ color: '#fff' }}>Playlists including "{track.name}"</h2>
       {loading ? (
-        <p>Loading playlists...</p>
+        <p style={{ color: '#bbb' }}>Loading playlists...</p>
       ) : matchingPlaylists.length > 0 ? (
-        <ul>
+        <ul style={{ listStyle: 'none', padding: 0 }}>
           {matchingPlaylists.map((pl) => (
-            <li key={pl.id}>
+            <li key={pl.id} style={{ marginBottom: '12px' }}>
               <a
                 href="#"
                 onClick={(e) => {
                   e.preventDefault();
                   onPlaylistSelect(pl);
                 }}
-                style={{ textDecoration: 'none', color: '#1DB954' }}
+                style={{
+                  textDecoration: 'none',
+                  color: '#1DB954',
+                  fontSize: '18px'
+                }}
               >
                 {pl.name} — {pl.tracks.total} tracks
               </a>
@@ -68,7 +81,7 @@ export default function SongPlaylists({ token, track, userPlaylists, onPlaylistS
           ))}
         </ul>
       ) : (
-        <p>No playlists found that include this song.</p>
+        <p style={{ color: '#bbb' }}>No playlists found that include this song.</p>
       )}
     </div>
   );

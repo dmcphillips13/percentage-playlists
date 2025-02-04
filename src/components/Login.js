@@ -13,11 +13,13 @@ export default function Login() {
     <a
       href={loginUrl}
       style={{
-        padding: '10px 20px',
+        padding: '12px 24px',
         backgroundColor: '#1DB954',
         color: '#fff',
         textDecoration: 'none',
         borderRadius: '25px',
+        fontWeight: 'bold',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
       }}
     >
       Login with Spotify
