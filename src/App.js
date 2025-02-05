@@ -5,22 +5,22 @@ import LandingPage from './components/LandingPage';
 import MainView from './components/MainView';
 
 function AppContent() {
-  const { token } = useContext(AuthContext);
+  const { spotifyToken, soundcloudToken } = useContext(AuthContext);
   // landingMode controls whether the landing page is shown.
   const [landingMode, setLandingMode] = useState(true);
 
   const handleEnter = () => setLandingMode(false);
 
   const handleLogout = () => {
-    // Reset landing mode on logout.
-    setLandingMode(true);
-    // Clear token from localStorage.
-    window.localStorage.removeItem('token');
+    // Clear tokens from localStorage.
+    window.localStorage.removeItem('spotify_token');
+    window.localStorage.removeItem('soundcloud_token');
     // Reload the app to reinitialize authentication.
     window.location.reload();
   };
 
-  if (!token) {
+  // Only proceed if both tokens are present.
+  if (!spotifyToken || !soundcloudToken) {
     return (
       <div
         style={{
@@ -54,7 +54,9 @@ function AppContent() {
           marginBottom: '20px'
         }}
       >
-        <h1 style={{ margin: 0, color: '#fff' }}>My Spotify Playlists</h1>
+        <h1 style={{ margin: 0, color: '#fff' }}>
+          My Spotify & SoundCloud Playlists
+        </h1>
         <button
           onClick={handleLogout}
           style={{

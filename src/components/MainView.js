@@ -5,19 +5,17 @@ import PlaylistDetail from './PlaylistDetail';
 import SongPlaylists from './SongPlaylists';
 
 export default function MainView() {
-  const { token, user } = useContext(AuthContext);
+  const { spotifyToken, user } = useContext(AuthContext);
   const [playlists, setPlaylists] = useState([]);
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
   const [selectedTrack, setSelectedTrack] = useState(null);
-  // Playback state: which track is playing and whether it is playing.
   const [playingTrackId, setPlayingTrackId] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  // Fetch playlists when token is available and no specific view is active.
   useEffect(() => {
-    if (token && !selectedPlaylist && !selectedTrack) {
+    if (spotifyToken && !selectedPlaylist && !selectedTrack) {
       fetch('https://api.spotify.com/v1/me/playlists', {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${spotifyToken}` }
       })
         .then((response) => response.json())
         .then((data) => {
@@ -29,20 +27,18 @@ export default function MainView() {
         })
         .catch((error) => console.error('Error fetching playlists:', error));
     }
-  }, [token, selectedPlaylist, selectedTrack]);
+  }, [spotifyToken, selectedPlaylist, selectedTrack]);
 
-  // Filter playlists to only those owned by the logged-in user.
   const userOwnedPlaylists = user
     ? playlists.filter((pl) => pl.owner && pl.owner.id === user.id)
     : playlists;
 
-  // Playback control function.
   const handlePlayPause = (track, action) => {
     if (action === 'play') {
       fetch('https://api.spotify.com/v1/me/player/play', {
         method: 'PUT',
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${spotifyToken}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ uris: [track.uri] })
@@ -55,14 +51,13 @@ export default function MainView() {
     } else if (action === 'pause') {
       fetch('https://api.spotify.com/v1/me/player/pause', {
         method: 'PUT',
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${spotifyToken}` }
       })
         .then(() => setIsPlaying(false))
         .catch((err) => console.error('Error pausing track:', err));
     }
   };
 
-  // Navigation handlers.
   const handlePlaylistClick = (playlist) => setSelectedPlaylist(playlist);
   const handleTrackClick = (track) => setSelectedTrack(track);
   const handleBackFromPlaylistDetail = () => setSelectedPlaylist(null);
@@ -76,7 +71,7 @@ export default function MainView() {
     <>
       {selectedPlaylist && !selectedTrack ? (
         <PlaylistDetail
-          token={token}
+          token={spotifyToken}
           playlistId={selectedPlaylist.id}
           goBack={handleBackFromPlaylistDetail}
           onTrackClick={handleTrackClick}
@@ -86,7 +81,7 @@ export default function MainView() {
         />
       ) : selectedTrack ? (
         <SongPlaylists
-          token={token}
+          token={spotifyToken}
           track={selectedTrack}
           userPlaylists={userOwnedPlaylists}
           onPlaylistSelect={handleSongPlaylistSelect}
