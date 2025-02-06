@@ -56,8 +56,6 @@ export const AuthProvider = ({ children }) => {
         body.append('code', code);
         body.append('code_verifier', codeVerifier);
 
-        console.log("Exchanging SoundCloud code with payload:", body.toString());
-
         // POST to SoundCloud's token endpoint (which now requires the client secret)
         fetch(SOUNDCLOUD_TOKEN_ENDPOINT, {
           method: 'POST',

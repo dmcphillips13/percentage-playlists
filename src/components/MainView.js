@@ -4,14 +4,15 @@ import Playlists from './Playlists';
 import PlaylistDetail from './PlaylistDetail';
 import SongPlaylists from './SongPlaylists';
 
-export default function MainView() {
-  const { spotifyToken, user } = useContext(AuthContext);
+export default function MainView({ onBack }) {
+  const { spotifyToken } = useContext(AuthContext);
   const [playlists, setPlaylists] = useState([]);
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
   const [selectedTrack, setSelectedTrack] = useState(null);
   const [playingTrackId, setPlayingTrackId] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
+  // Fetch Spotify playlists when needed
   useEffect(() => {
     if (spotifyToken && !selectedPlaylist && !selectedTrack) {
       fetch('https://api.spotify.com/v1/me/playlists', {
@@ -21,60 +22,44 @@ export default function MainView() {
         .then((data) => {
           if (data.items) {
             setPlaylists(data.items);
-          } else {
-            console.error('Unexpected response data:', data);
           }
         })
-        .catch((error) => console.error('Error fetching playlists:', error));
+        .catch((error) =>
+          console.error("Error fetching Spotify playlists:", error)
+        );
     }
   }, [spotifyToken, selectedPlaylist, selectedTrack]);
 
-  const userOwnedPlaylists = user
-    ? playlists.filter((pl) => pl.owner && pl.owner.id === user.id)
-    : playlists;
-
   const handlePlayPause = (track, action) => {
-    if (action === 'play') {
-      fetch('https://api.spotify.com/v1/me/player/play', {
-        method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${spotifyToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ uris: [track.uri] })
-      })
-        .then(() => {
-          setPlayingTrackId(track.id);
-          setIsPlaying(true);
-        })
-        .catch((err) => console.error('Error playing track:', err));
-    } else if (action === 'pause') {
-      fetch('https://api.spotify.com/v1/me/player/pause', {
-        method: 'PUT',
-        headers: { Authorization: `Bearer ${spotifyToken}` }
-      })
-        .then(() => setIsPlaying(false))
-        .catch((err) => console.error('Error pausing track:', err));
-    }
-  };
-
-  const handlePlaylistClick = (playlist) => setSelectedPlaylist(playlist);
-  const handleTrackClick = (track) => setSelectedTrack(track);
-  const handleBackFromPlaylistDetail = () => setSelectedPlaylist(null);
-  const handleBackFromSongPlaylists = () => setSelectedTrack(null);
-  const handleSongPlaylistSelect = (playlist) => {
-    setSelectedTrack(null);
-    setSelectedPlaylist(playlist);
+    // Stub: Implement Spotify playback control with the Web Playback SDK as needed.
+    console.log(`Spotify: ${action} track ${track.name}`);
   };
 
   return (
-    <>
+    <div>
+      {/* Header with back button */}
+      <header style={{ display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
+        <button
+          onClick={onBack}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: '#1DB954',
+            fontSize: '16px',
+            cursor: 'pointer',
+            marginRight: '10px'
+          }}
+        >
+          &larr; Back
+        </button>
+        <h2 style={{ margin: 0, color: '#fff' }}>Spotify Playlists</h2>
+      </header>
       {selectedPlaylist && !selectedTrack ? (
         <PlaylistDetail
           token={spotifyToken}
           playlistId={selectedPlaylist.id}
-          goBack={handleBackFromPlaylistDetail}
-          onTrackClick={handleTrackClick}
+          goBack={() => setSelectedPlaylist(null)}
+          onTrackClick={(track) => setSelectedTrack(track)}
           onPlayPause={handlePlayPause}
           playingTrackId={playingTrackId}
           isPlaying={isPlaying}
@@ -83,16 +68,19 @@ export default function MainView() {
         <SongPlaylists
           token={spotifyToken}
           track={selectedTrack}
-          userPlaylists={userOwnedPlaylists}
-          onPlaylistSelect={handleSongPlaylistSelect}
-          onBack={handleBackFromSongPlaylists}
+          userPlaylists={playlists}
+          onPlaylistSelect={(pl) => {
+            setSelectedTrack(null);
+            setSelectedPlaylist(pl);
+          }}
+          onBack={() => setSelectedTrack(null)}
           onPlayPause={handlePlayPause}
           playingTrackId={playingTrackId}
           isPlaying={isPlaying}
         />
       ) : (
-        <Playlists playlists={playlists} onPlaylistClick={handlePlaylistClick} />
+        <Playlists playlists={playlists} onPlaylistClick={(pl) => setSelectedPlaylist(pl)} />
       )}
-    </>
+    </div>
   );
 }
