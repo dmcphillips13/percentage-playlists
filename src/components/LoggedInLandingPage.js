@@ -32,6 +32,20 @@ export default function LoggedInLandingPage({ onSelectView }) {
       >
         SoundCloud Playlists
       </button>
+      <button
+        onClick={() => onSelectView('shared')}
+        style={{
+          padding: '12px 24px',
+          margin: '10px',
+          backgroundColor: '#333',
+          color: '#fff',
+          border: 'none',
+          borderRadius: '4px',
+          cursor: 'pointer'
+        }}
+      >
+        Shared Playlists
+      </button>
     </div>
   );
 }

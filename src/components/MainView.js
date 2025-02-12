@@ -31,8 +31,28 @@ export default function MainView({ onBack }) {
   }, [spotifyToken, selectedPlaylist, selectedTrack]);
 
   const handlePlayPause = (track, action) => {
-    // Stub: Implement Spotify playback control with the Web Playback SDK as needed.
-    console.log(`Spotify: ${action} track ${track.name}`);
+    if (action === 'play') {
+      fetch('https://api.spotify.com/v1/me/player/play', {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${spotifyToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ uris: [track.uri] })
+      })
+        .then(() => {
+          setPlayingTrackId(track.id);
+          setIsPlaying(true);
+        })
+        .catch((err) => console.error('Error playing track:', err));
+    } else if (action === 'pause') {
+      fetch('https://api.spotify.com/v1/me/player/pause', {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${spotifyToken}` }
+      })
+        .then(() => setIsPlaying(false))
+        .catch((err) => console.error('Error pausing track:', err));
+    }
   };
 
   return (

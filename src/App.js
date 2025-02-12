@@ -2,12 +2,16 @@ import React, { useState, useContext } from 'react';
 import { AuthProvider, AuthContext } from './context/AuthContext';
 import Login from './components/Login';
 import LoggedInLandingPage from './components/LoggedInLandingPage';
-import MainView from './components/MainView'; // Spotify view (assumed to already work)
+import MainView from './components/MainView';               // Spotify view
 import SoundCloudMainView from './components/SoundCloudMainView';
+import SharedPlaylistsMainView from './components/SharedPlaylistsMainView';
+import SharedPlaylistDetail from './components/SharedPlaylistDetail';
 
 function AppContent() {
   const { spotifyToken, soundcloudToken } = useContext(AuthContext);
-  const [view, setView] = useState('landing'); // "landing", "spotify", or "soundcloud"
+  // view can be: "landing", "spotify", "soundcloud", "shared"
+  const [view, setView] = useState('landing');
+  const [selectedSharedPlaylist, setSelectedSharedPlaylist] = useState(null);
 
   const handleLogout = () => {
     window.localStorage.removeItem('spotify_token');
@@ -44,6 +48,30 @@ function AppContent() {
       {view === 'landing' && <LoggedInLandingPage onSelectView={setView} />}
       {view === 'spotify' && <MainView onBack={() => setView('landing')} />}
       {view === 'soundcloud' && <SoundCloudMainView onBack={() => setView('landing')} />}
+      {view === 'shared' && (
+        selectedSharedPlaylist ? (
+          <SharedPlaylistDetail
+            sharedPlaylist={selectedSharedPlaylist}
+            onBack={() => setSelectedSharedPlaylist(null)}
+            onPlayPauseCombined={(track, action, source) => {
+              // For Spotify, call your Spotify playback; for SoundCloud, you might call a function passed down.
+              if (source === 'spotify') {
+                console.log(`Spotify: ${action} track ${track.name || track.title}`);
+              } else if (source === 'soundcloud') {
+                // You can either call a dedicated function or let SharedPlaylistDetail handle SoundCloud playback internally.
+                // Here we leave it to SharedPlaylistDetail.
+              }
+            }}
+          />
+        ) : (
+          <SharedPlaylistsMainView
+            onBack={() => setView('landing')}
+            onSelectSharedPlaylist={(pl) => {
+              setSelectedSharedPlaylist(pl);
+            }}
+          />
+        )
+      )}
     </div>
   );
 }
