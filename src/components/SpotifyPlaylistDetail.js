@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-export default function PlaylistDetail({
+export default function SpotifyPlaylistDetail({
   token,
   playlistId,
   goBack,

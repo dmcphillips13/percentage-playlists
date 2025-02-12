@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function Playlists({ playlists, onPlaylistClick }) {
+export default function SpotifyPlaylists({ playlists, onPlaylistClick }) {
   if (!playlists || playlists.length === 0) {
     return <p style={{ color: '#bbb' }}>No playlists found.</p>;
   }

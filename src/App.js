@@ -2,7 +2,7 @@ import React, { useState, useContext } from 'react';
 import { AuthProvider, AuthContext } from './context/AuthContext';
 import Login from './components/Login';
 import LoggedInLandingPage from './components/LoggedInLandingPage';
-import MainView from './components/MainView';               // Spotify view
+import SpotifyMainView from './components/SpotifyMainView';               // Spotify view
 import SoundCloudMainView from './components/SoundCloudMainView';
 import SharedPlaylistsMainView from './components/SharedPlaylistsMainView';
 import SharedPlaylistDetail from './components/SharedPlaylistDetail';
@@ -46,7 +46,7 @@ function AppContent() {
         </button>
       </header>
       {view === 'landing' && <LoggedInLandingPage onSelectView={setView} />}
-      {view === 'spotify' && <MainView onBack={() => setView('landing')} />}
+      {view === 'spotify' && <SpotifyMainView onBack={() => setView('landing')} />}
       {view === 'soundcloud' && <SoundCloudMainView onBack={() => setView('landing')} />}
       {view === 'shared' && (
         selectedSharedPlaylist ? (

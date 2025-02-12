@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import Playlists from './Playlists';
-import PlaylistDetail from './PlaylistDetail';
-import SongPlaylists from './SongPlaylists';
+import SpotifyPlaylists from './SpotifyPlaylists';
+import SpotifyPlaylistDetail from './SpotifyPlaylistDetail';
+import SpotifySongPlaylists from './SpotifySongPlaylists';
 
-export default function MainView({ onBack }) {
+export default function SpotifyMainView({ onBack }) {
   const { spotifyToken } = useContext(AuthContext);
   const [playlists, setPlaylists] = useState([]);
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
@@ -75,7 +75,7 @@ export default function MainView({ onBack }) {
         <h2 style={{ margin: 0, color: '#fff' }}>Spotify Playlists</h2>
       </header>
       {selectedPlaylist && !selectedTrack ? (
-        <PlaylistDetail
+        <SpotifyPlaylistDetail
           token={spotifyToken}
           playlistId={selectedPlaylist.id}
           goBack={() => setSelectedPlaylist(null)}
@@ -85,7 +85,7 @@ export default function MainView({ onBack }) {
           isPlaying={isPlaying}
         />
       ) : selectedTrack ? (
-        <SongPlaylists
+        <SpotifySongPlaylists
           token={spotifyToken}
           track={selectedTrack}
           userPlaylists={playlists}
@@ -99,7 +99,7 @@ export default function MainView({ onBack }) {
           isPlaying={isPlaying}
         />
       ) : (
-        <Playlists playlists={playlists} onPlaylistClick={(pl) => setSelectedPlaylist(pl)} />
+        <SpotifyPlaylists playlists={playlists} onPlaylistClick={(pl) => setSelectedPlaylist(pl)} />
       )}
     </div>
   );
