@@ -79,9 +79,11 @@ export default function SpotifySongPlaylists({
           onClick={(e) => {
             e.preventDefault();
             if (playingTrackId === track.id && isPlaying) {
-              onPlayPause(track, 'pause');
+              // TODO - MAKE SURE THIS WORKS
+              onPlayPause(track, 'pause', 0);
             } else {
-              onPlayPause(track, 'play');
+              // TODO - MAKE SURE THIS WORKS
+              onPlayPause(track, 'play', 0);
             }
           }}
           style={{

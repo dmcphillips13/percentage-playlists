@@ -3,6 +3,7 @@ import { AuthContext } from '../context/AuthContext';
 import SpotifyPlaylists from './SpotifyPlaylists';
 import SpotifyPlaylistDetail from './SpotifyPlaylistDetail';
 import SpotifySongPlaylists from './SpotifySongPlaylists';
+import { PlaybackContext } from '../context/PlaybackContext';
 
 export default function SpotifyMainView({ onBack }) {
   const { spotifyToken } = useContext(AuthContext);
@@ -11,6 +12,8 @@ export default function SpotifyMainView({ onBack }) {
   const [selectedTrack, setSelectedTrack] = useState(null);
   const [playingTrackId, setPlayingTrackId] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
+
+  const { pauseTrack, playTrack } = useContext(PlaybackContext);
 
   // Fetch Spotify playlists when needed
   useEffect(() => {
@@ -30,28 +33,11 @@ export default function SpotifyMainView({ onBack }) {
     }
   }, [spotifyToken, selectedPlaylist, selectedTrack]);
 
-  const handlePlayPause = (track, action) => {
+  const handlePlayPause = (track, action, index) => {
     if (action === 'play') {
-      fetch('https://api.spotify.com/v1/me/player/play', {
-        method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${spotifyToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ uris: [track.uri] })
-      })
-        .then(() => {
-          setPlayingTrackId(track.id);
-          setIsPlaying(true);
-        })
-        .catch((err) => console.error('Error playing track:', err));
+      playTrack(selectedPlaylist, index, 'spotify', track);
     } else if (action === 'pause') {
-      fetch('https://api.spotify.com/v1/me/player/pause', {
-        method: 'PUT',
-        headers: { Authorization: `Bearer ${spotifyToken}` }
-      })
-        .then(() => setIsPlaying(false))
-        .catch((err) => console.error('Error pausing track:', err));
+      pauseTrack();
     }
   };
 

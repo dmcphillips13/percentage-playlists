@@ -1,16 +1,45 @@
-import React, { useState, useRef, useContext, useEffect } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
+import { PlaybackContext } from '../context/PlaybackContext';
 
-export default function SharedPlaylistDetail({ sharedPlaylist, onBack, onPlayPauseCombined }) {
-  const { soundcloudToken, spotifyToken } = useContext(AuthContext);
+// Helper to normalize the shared playlist into a flat playlist object.
+function normalizeSharedPlaylist(sharedPlaylist, effectiveSpotifyPlaylist) {
+  const spotifyTracks =
+    effectiveSpotifyPlaylist &&
+      effectiveSpotifyPlaylist.tracks &&
+      effectiveSpotifyPlaylist.tracks.items
+      ? effectiveSpotifyPlaylist.tracks.items.map((item) => ({
+        ...item.track,
+        source: 'spotify',
+      }))
+      : [];
+  const soundcloudTracks =
+    sharedPlaylist.soundcloud && sharedPlaylist.soundcloud.tracks
+      ? sharedPlaylist.soundcloud.tracks.map((track) => ({
+        ...track,
+        source: 'soundcloud',
+      }))
+      : [];
+  return {
+    id: sharedPlaylist.id || sharedPlaylist.title, // Use an ID if available; else use title.
+    title: sharedPlaylist.title,
+    tracks: [...spotifyTracks, ...soundcloudTracks],
+  };
+}
 
-  // State to hold the full Spotify playlist details (if needed)
+export default function SharedPlaylistDetail({ sharedPlaylist, onBack }) {
+  const { spotifyToken } = useContext(AuthContext);
+  const {
+    playTrack,
+    pauseTrack,
+    currentPlaylist,
+    currentTrackIndex,
+    isPlaying,
+    currentSource,
+  } = useContext(PlaybackContext);
   const [spotifyPlaylistFull, setSpotifyPlaylistFull] = useState(null);
-  // State to track which source is currently playing ("spotify" or "soundcloud")
-  const [currentSource, setCurrentSource] = useState(null);
 
-  // If the provided sharedPlaylist.spotify does not have full track details,
-  // fetch them using the href provided.
+  // If the sharedPlaylist.spotify object is only a summary, fetch full details.
   useEffect(() => {
     if (
       sharedPlaylist.spotify &&
@@ -23,111 +52,35 @@ export default function SharedPlaylistDetail({ sharedPlaylist, onBack, onPlayPau
         .then((response) => response.json())
         .then((data) => setSpotifyPlaylistFull(data))
         .catch((error) =>
-          console.error("Error fetching full Spotify playlist:", error)
+          console.error('Error fetching full Spotify playlist:', error)
         );
     }
   }, [sharedPlaylist.spotify, spotifyToken]);
 
-  // Use the full Spotify playlist if we fetched it; otherwise, use the provided object.
-  const effectiveSpotifyPlaylist = spotifyPlaylistFull ? spotifyPlaylistFull : sharedPlaylist.spotify;
+  const effectiveSpotifyPlaylist = spotifyPlaylistFull
+    ? spotifyPlaylistFull
+    : sharedPlaylist.spotify;
 
-  // Extract Spotify tracks (if available) and tag with a source.
-  const spotifyTracks =
-    effectiveSpotifyPlaylist &&
-      effectiveSpotifyPlaylist.tracks &&
-      effectiveSpotifyPlaylist.tracks.items
-      ? effectiveSpotifyPlaylist.tracks.items.map((item) => ({ ...item.track, source: 'spotify' }))
-      : [];
+  // Normalize the shared playlist into a flat playlist object.
+  const normalizedPlaylist = normalizeSharedPlaylist(sharedPlaylist, effectiveSpotifyPlaylist);
 
-  // Extract SoundCloud tracks (if available) and tag with a source.
-  const soundcloudTracks =
-    sharedPlaylist.soundcloud && sharedPlaylist.soundcloud.tracks
-      ? sharedPlaylist.soundcloud.tracks.map((track) => ({ ...track, source: 'soundcloud' }))
-      : [];
-
-  // Merge tracks from both sources.
-  const mergedTracks = [...spotifyTracks, ...soundcloudTracks];
-
-  // Manage local playback for both SoundCloud and Spotify tracks using a single HTMLAudio element.
-  const audioRef = useRef(null);
-  const [playingTrackId, setPlayingTrackId] = useState(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-
-  const handleTrackPlayPause = (track, action) => {
-    if (track.source === 'soundcloud') {
-      // SoundCloud playback
-      let streamUrl = track.stream_url;
-      if (streamUrl.startsWith('http://')) {
-        streamUrl = 'https://' + streamUrl.substring(7);
+  // When a user clicks a play/pause button, determine the track's index and call global functions.
+  const handlePlayPause = (track, index) => {
+    // If the same track is already playing, pause it.
+    if (
+      currentPlaylist &&
+      currentPlaylist.id === normalizedPlaylist.id &&
+      currentTrackIndex === index &&
+      isPlaying
+    ) {
+      pauseTrack();
+    } else {
+      // If a track is already playing from a different source, pause it first.
+      if (isPlaying && currentSource && currentSource !== track.source) {
+        pauseTrack();
       }
-      if (action === 'play') {
-        if (audioRef.current && playingTrackId === track.id && currentSource === 'soundcloud') {
-          audioRef.current
-            .play()
-            .then(() => setIsPlaying(true))
-            .catch((err) => console.error("Error resuming SoundCloud track:", err));
-        } else {
-          if (audioRef.current) {
-            audioRef.current.pause();
-          }
-          // Fetch the track stream as a blob using the Authorization header.
-          fetch(streamUrl, {
-            headers: {
-              Authorization: `OAuth ${soundcloudToken}`,
-            },
-          })
-            .then((response) => {
-              if (!response.ok) {
-                throw new Error(`Failed to fetch stream: ${response.status}`);
-              }
-              return response.blob();
-            })
-            .then((blob) => {
-              const objectUrl = URL.createObjectURL(blob);
-              const audio = new Audio();
-              audio.src = objectUrl;
-              audio.crossOrigin = "anonymous";
-              audioRef.current = audio;
-              return audio.play();
-            })
-            .then(() => {
-              setPlayingTrackId(track.id);
-              setIsPlaying(true);
-              setCurrentSource('soundcloud');
-            })
-            .catch((err) => {
-              console.error("Error playing SoundCloud track:", err);
-            });
-        }
-      } else if (action === 'pause') {
-        if (audioRef.current) {
-          audioRef.current.pause();
-          setIsPlaying(false);
-        }
-      }
-    } else if (track.source === 'spotify') {
-      if (action === 'play') {
-        fetch('https://api.spotify.com/v1/me/player/play', {
-          method: 'PUT',
-          headers: {
-            Authorization: `Bearer ${spotifyToken}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ uris: [track.uri] })
-        })
-          .then(() => {
-            setPlayingTrackId(track.id);
-            setIsPlaying(true);
-          })
-          .catch((err) => console.error('Error playing track:', err));
-      } else if (action === 'pause') {
-        fetch('https://api.spotify.com/v1/me/player/pause', {
-          method: 'PUT',
-          headers: { Authorization: `Bearer ${spotifyToken}` }
-        })
-          .then(() => setIsPlaying(false))
-          .catch((err) => console.error('Error pausing track:', err));
-      }
+      // Then, start playing the selected track.
+      playTrack(normalizedPlaylist, index, track.source, track);
     }
   };
 
@@ -147,9 +100,9 @@ export default function SharedPlaylistDetail({ sharedPlaylist, onBack, onPlayPau
         &larr; Back
       </button>
       <h2 style={{ color: '#fff' }}>{sharedPlaylist.title} (Shared)</h2>
-      {mergedTracks.length > 0 ? (
+      {normalizedPlaylist.tracks.length > 0 ? (
         <ul style={{ listStyle: 'none', padding: 0 }}>
-          {mergedTracks.map((track, index) => (
+          {normalizedPlaylist.tracks.map((track, index) => (
             <li
               key={index}
               style={{
@@ -162,12 +115,7 @@ export default function SharedPlaylistDetail({ sharedPlaylist, onBack, onPlayPau
                 {track.name || track.title} [{track.source}]
               </span>
               <button
-                onClick={() =>
-                  handleTrackPlayPause(
-                    track,
-                    playingTrackId === track.id && isPlaying ? 'pause' : 'play'
-                  )
-                }
+                onClick={() => handlePlayPause(track, index)}
                 style={{
                   background: 'transparent',
                   border: 'none',
@@ -176,7 +124,12 @@ export default function SharedPlaylistDetail({ sharedPlaylist, onBack, onPlayPau
                   cursor: 'pointer',
                 }}
               >
-                {playingTrackId === track.id && isPlaying ? 'Pause' : 'Play'}
+                {currentPlaylist &&
+                  currentPlaylist.id === normalizedPlaylist.id &&
+                  currentTrackIndex === index &&
+                  isPlaying
+                  ? 'Pause'
+                  : 'Play'}
               </button>
             </li>
           ))}
