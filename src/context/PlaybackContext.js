@@ -14,79 +14,112 @@ export const PlaybackProvider = ({ children }) => {
   const [currentSource, setCurrentSource] = useState(null);
   // Whether playback is active
   const [isPlaying, setIsPlaying] = useState(false);
+  // Store playback offsets in ms for Spotify
+  const [spotifyOffset, setSpotifyOffset] = useState(0);
+  // Store playback offsets in sec for SoundCloud
+  const [soundcloudOffset, setSoundcloudOffset] = useState(0);
+  // Track the currently playing track's ID
+  const [playingTrackId, setPlayingTrackId] = useState(null);
 
   // For SoundCloud, we use an HTMLAudio element.
   const audioRef = useRef(null);
 
-  // Global function to play a track from a given playlist.
-  // `playlist` is an object with a "tracks" array.
-  // `index` is the track index, and `source` indicates the service.
   const playTrack = (playlist, index, source, track) => {
     setCurrentPlaylist(playlist);
     setCurrentTrackIndex(index);
     setCurrentSource(source);
     if (source === 'spotify') {
-      // For Spotify, call the Spotify API to start playback.
+      const body = { uris: [track.uri] };
+      if (
+        currentPlaylist &&
+        currentPlaylist.id === playlist.id &&
+        currentTrackIndex === index &&
+        spotifyOffset > 0
+      ) {
+        body.position_ms = spotifyOffset;
+      }
       fetch('https://api.spotify.com/v1/me/player/play', {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${spotifyToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ uris: [track.uri] }),
+        body: JSON.stringify(body),
       })
         .then(() => {
           setIsPlaying(true);
+          setPlayingTrackId(track.id);
+          setSpotifyOffset(0);
         })
         .catch((err) => console.error('Error playing Spotify track:', err));
     } else if (source === 'soundcloud') {
-      // For SoundCloud, we need to fetch the stream as a blob.
-      // Ensure the stream URL uses HTTPS.
-      let streamUrl = track.stream_url;
-      if (streamUrl.startsWith('http://')) {
-        streamUrl = 'https://' + streamUrl.substring(7);
+      if (audioRef.current && playingTrackId === track.id) {
+        audioRef.current.currentTime = soundcloudOffset;
+        audioRef.current
+          .play()
+          .then(() => {
+            setIsPlaying(true);
+            setSoundcloudOffset(0);
+            setPlayingTrackId(track.id);
+          })
+          .catch((err) => console.error('Error resuming SoundCloud track:', err));
+      } else {
+        if (audioRef.current) {
+          audioRef.current.pause();
+        }
+        let streamUrl = track.stream_url;
+        if (streamUrl.startsWith('http://')) {
+          streamUrl = 'https://' + streamUrl.substring(7);
+        }
+        fetch(streamUrl, {
+          headers: {
+            Authorization: `OAuth ${soundcloudToken}`,
+          },
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error(`Failed to fetch SoundCloud stream: ${response.status}`);
+            }
+            return response.blob();
+          })
+          .then((blob) => {
+            const objectUrl = URL.createObjectURL(blob);
+            const audio = new Audio();
+            audio.src = objectUrl;
+            audio.crossOrigin = 'anonymous';
+            audioRef.current = audio;
+            return audio.play();
+          })
+          .then(() => {
+            setIsPlaying(true);
+            setSoundcloudOffset(0);
+            setPlayingTrackId(track.id);
+          })
+          .catch((err) => console.error('Error playing SoundCloud track:', err));
       }
-      // Pause any currently playing track.
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
-      fetch(streamUrl, {
-        headers: {
-          Authorization: `OAuth ${soundcloudToken}`,
-        },
-      })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error(`Failed to fetch SoundCloud stream: ${response.status}`);
-          }
-          return response.blob();
-        })
-        .then((blob) => {
-          const objectUrl = URL.createObjectURL(blob);
-          const audio = new Audio();
-          audio.src = objectUrl;
-          audio.crossOrigin = 'anonymous';
-          audioRef.current = audio;
-          return audio.play();
-        })
-        .then(() => {
-          setIsPlaying(true);
-        })
-        .catch((err) => console.error('Error playing SoundCloud track:', err));
     }
   };
 
-  // Function to pause the current track.
   const pauseTrack = () => {
     if (currentSource === 'spotify') {
-      fetch('https://api.spotify.com/v1/me/player/pause', {
-        method: 'PUT',
+      fetch('https://api.spotify.com/v1/me/player', {
         headers: { Authorization: `Bearer ${spotifyToken}` },
       })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && typeof data.progress_ms === 'number') {
+            setSpotifyOffset(data.progress_ms);
+          }
+          return fetch('https://api.spotify.com/v1/me/player/pause', {
+            method: 'PUT',
+            headers: { Authorization: `Bearer ${spotifyToken}` },
+          });
+        })
         .then(() => setIsPlaying(false))
         .catch((err) => console.error('Error pausing Spotify track:', err));
     } else if (currentSource === 'soundcloud') {
       if (audioRef.current) {
+        setSoundcloudOffset(audioRef.current.currentTime);
         audioRef.current.pause();
         setIsPlaying(false);
       }
@@ -124,6 +157,7 @@ export const PlaybackProvider = ({ children }) => {
         currentTrackIndex,
         currentSource,
         isPlaying,
+        playingTrackId,
         playTrack,
         pauseTrack,
         skipForward,
