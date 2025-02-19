@@ -24,6 +24,7 @@ export const PlaybackProvider = ({ children }) => {
   // For SoundCloud, we use an HTMLAudio element.
   const audioRef = useRef(null);
 
+  // Global function to play a track.
   const playTrack = (playlist, index, source, track) => {
     setCurrentPlaylist(playlist);
     setCurrentTrackIndex(index);
@@ -54,6 +55,7 @@ export const PlaybackProvider = ({ children }) => {
         .catch((err) => console.error('Error playing Spotify track:', err));
     } else if (source === 'soundcloud') {
       if (audioRef.current && playingTrackId === track.id) {
+        // If same track was paused, resume from saved offset.
         audioRef.current.currentTime = soundcloudOffset;
         audioRef.current
           .play()
@@ -100,9 +102,10 @@ export const PlaybackProvider = ({ children }) => {
     }
   };
 
+  // Update pauseTrack to return a promise.
   const pauseTrack = () => {
     if (currentSource === 'spotify') {
-      fetch('https://api.spotify.com/v1/me/player', {
+      return fetch('https://api.spotify.com/v1/me/player', {
         headers: { Authorization: `Bearer ${spotifyToken}` },
       })
         .then((res) => res.json())
@@ -115,37 +118,50 @@ export const PlaybackProvider = ({ children }) => {
             headers: { Authorization: `Bearer ${spotifyToken}` },
           });
         })
-        .then(() => setIsPlaying(false))
-        .catch((err) => console.error('Error pausing Spotify track:', err));
+        .then(() => {
+          setIsPlaying(false);
+        })
+        .catch((err) => {
+          console.error('Error pausing Spotify track:', err);
+          return Promise.resolve();
+        });
     } else if (currentSource === 'soundcloud') {
       if (audioRef.current) {
         setSoundcloudOffset(audioRef.current.currentTime);
         audioRef.current.pause();
         setIsPlaying(false);
       }
+      return Promise.resolve();
     }
   };
 
-  // Function to skip to the next track.
-  const skipForward = () => {
+  // Update skip functions to pause current playback if switching sources.
+  const skipForward = async () => {
     if (currentPlaylist && currentTrackIndex !== null) {
       let nextIndex = currentTrackIndex + 1;
       if (nextIndex >= currentPlaylist.tracks.length) {
-        nextIndex = 0; // Loop around
+        nextIndex = 0;
       }
-      playTrack(currentPlaylist, nextIndex, currentSource, currentPlaylist.tracks[nextIndex]);
+      const nextTrack = currentPlaylist.tracks[nextIndex];
+      if (isPlaying && currentSource && currentSource !== nextTrack.source) {
+        await pauseTrack();
+      }
+      playTrack(currentPlaylist, nextIndex, nextTrack.source, nextTrack);
       setCurrentTrackIndex(nextIndex);
     }
   };
 
-  // Function to skip to the previous track.
-  const skipBackward = () => {
+  const skipBackward = async () => {
     if (currentPlaylist && currentTrackIndex !== null) {
       let prevIndex = currentTrackIndex - 1;
       if (prevIndex < 0) {
         prevIndex = currentPlaylist.tracks.length - 1;
       }
-      playTrack(currentPlaylist, prevIndex, currentSource, currentPlaylist.tracks[prevIndex]);
+      const prevTrack = currentPlaylist.tracks[prevIndex];
+      if (isPlaying && currentSource && currentSource !== prevTrack.source) {
+        await pauseTrack();
+      }
+      playTrack(currentPlaylist, prevIndex, prevTrack.source, prevTrack);
       setCurrentTrackIndex(prevIndex);
     }
   };

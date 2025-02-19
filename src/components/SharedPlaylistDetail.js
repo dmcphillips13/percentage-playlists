@@ -18,6 +18,8 @@ function normalizeSharedPlaylist(sharedPlaylist, effectiveSpotifyPlaylist) {
       ? sharedPlaylist.soundcloud.tracks.map((track) => ({
         ...track,
         source: 'soundcloud',
+        // Ensure we have a valid stream_url:
+        stream_url: track.stream_url || `${track.uri}/stream`,
       }))
       : [];
   return {
@@ -61,7 +63,7 @@ export default function SharedPlaylistDetail({ sharedPlaylist, onBack }) {
     ? spotifyPlaylistFull
     : sharedPlaylist.spotify;
 
-  // Normalize the shared playlist into a flat playlist object.
+  // Normalize the shared playlist so that it has a flat tracks array.
   const normalizedPlaylist = normalizeSharedPlaylist(sharedPlaylist, effectiveSpotifyPlaylist);
 
   // When a user clicks a play/pause button, determine the track's index and call global functions.
@@ -75,11 +77,11 @@ export default function SharedPlaylistDetail({ sharedPlaylist, onBack }) {
     ) {
       pauseTrack();
     } else {
-      // If a track is already playing from a different source, pause it first.
+      // If a track from a different source is playing, pause it first.
       if (isPlaying && currentSource && currentSource !== track.source) {
         pauseTrack();
       }
-      // Then, start playing the selected track.
+      // Then, play the selected track.
       playTrack(normalizedPlaylist, index, track.source, track);
     }
   };
