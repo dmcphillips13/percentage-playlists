@@ -1,4 +1,4 @@
-import React, { createContext, useState, useRef, useContext } from 'react';
+import React, { createContext, useState, useRef, useContext, useEffect } from 'react';
 import { AuthContext } from './AuthContext';
 
 export const PlaybackContext = createContext();
@@ -21,8 +21,66 @@ export const PlaybackProvider = ({ children }) => {
   // Track the currently playing track's ID
   const [playingTrackId, setPlayingTrackId] = useState(null);
 
+  // Spotify Web Playback SDK state
+  const [spotifyPlayer, setSpotifyPlayer] = useState(null);
+
   // For SoundCloud, we use an HTMLAudio element.
   const audioRef = useRef(null);
+
+  // --- Initialize Spotify SDK when spotifyToken is available ---
+  useEffect(() => {
+    if (spotifyToken) {
+      // Load the Spotify SDK if not already present.
+      let script = document.querySelector('script[src="https://sdk.scdn.co/spotify-player.js"]');
+      if (!script) {
+        script = document.createElement('script');
+        script.src = 'https://sdk.scdn.co/spotify-player.js';
+        script.async = true;
+        document.body.appendChild(script);
+      }
+      // Set up the global callback
+      window.onSpotifyWebPlaybackSDKReady = () => {
+        const player = new window.Spotify.Player({
+          name: 'Percentage Playlists Player',
+          getOAuthToken: cb => { cb(spotifyToken); },
+          volume: 0.5,
+        });
+
+        player.addListener('ready', ({ device_id }) => {
+          // Transfer playback to our SDK device.
+          fetch('https://api.spotify.com/v1/me/player', {
+            method: 'PUT',
+            headers: {
+              Authorization: `Bearer ${spotifyToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              device_ids: [device_id],
+              play: false,
+            }),
+          }).catch(() => { });
+        });
+
+        player.addListener('initialization_error', ({ message }) => {
+          console.error('Spotify Initialization Error:', message);
+        });
+        player.addListener('authentication_error', ({ message }) => {
+          console.error('Spotify Authentication Error:', message);
+        });
+        player.addListener('account_error', ({ message }) => {
+          console.error('Spotify Account Error:', message);
+        });
+        player.addListener('playback_error', ({ message }) => {
+          console.error('Spotify Playback Error:', message);
+        });
+
+        player.connect().then(success => {
+          // Player connected successfully.
+        });
+        setSpotifyPlayer(player);
+      };
+    }
+  }, [spotifyToken]);
 
   // Global function to play a track.
   const playTrack = (playlist, index, source, track) => {
@@ -178,6 +236,7 @@ export const PlaybackProvider = ({ children }) => {
         pauseTrack,
         skipForward,
         skipBackward,
+        spotifyPlayer,
       }}
     >
       {children}
