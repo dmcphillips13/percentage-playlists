@@ -1,11 +1,17 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { AuthContext } from '../context/AuthContext';
+import React, { useContext, useMemo } from 'react';
 import { PlaybackContext } from '../context/PlaybackContext';
 
 export default function SoundCloudPlaylistDetail({ playlist, onBack, onTrackClick }) {
-  const { soundcloudToken } = useContext(AuthContext);
   const { playTrack, pauseTrack, currentSource, isPlaying } = useContext(PlaybackContext);
-  // Assume that the playlist object here already contains full track details in playlist.tracks
+
+  // Create a formatted playlist with source property on each track
+  const formattedPlaylist = useMemo(() => ({
+    ...playlist,
+    tracks: playlist.tracks.map(track => ({
+      ...track,
+      source: 'soundcloud'
+    }))
+  }), [playlist]);
 
   return (
     <div>
@@ -34,7 +40,8 @@ export default function SoundCloudPlaylistDetail({ playlist, onBack, onTrackClic
                 if (isPlaying && currentSource && currentSource !== 'soundcloud') {
                   pauseTrack();
                 }
-                playTrack(playlist, index, 'soundcloud', track);
+                const trackWithSource = formattedPlaylist.tracks[index];
+                playTrack(formattedPlaylist, index, 'soundcloud', trackWithSource);
               }}
               style={{ background: 'transparent', border: 'none', color: '#1DB954', fontSize: '16px', cursor: 'pointer', marginRight: '10px' }}
             >

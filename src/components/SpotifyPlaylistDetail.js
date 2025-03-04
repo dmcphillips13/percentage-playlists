@@ -17,10 +17,13 @@ export default function SpotifyPlaylistDetail({ token, playlistId, onBack, onTra
 
   if (!playlist) return <div style={{ color: '#fff' }}>Loading...</div>;
 
-  // Flatten the track items.
+  // Flatten the track items and add source property to each track.
   const formattedPlaylist = {
     ...playlist,
-    tracks: playlist.tracks.items.map(item => item.track),
+    tracks: playlist.tracks.items.map(item => ({
+      ...item.track,
+      source: 'spotify'
+    })),
   };
 
   return (
