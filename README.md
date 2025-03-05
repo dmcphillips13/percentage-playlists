@@ -1,6 +1,16 @@
-# Getting Started with Create React App
+# Percentage Playlists
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A web application for managing and playing music playlists from Spotify and SoundCloud. Includes features like intelligent shuffle, cross-platform playlist sharing, and custom playback controls.
+
+This project is deployed at: [https://dmcphillips13.github.io/percentage-playlists](https://dmcphillips13.github.io/percentage-playlists)
+
+## Features
+
+- Integration with Spotify and SoundCloud APIs
+- Create and manage shared playlists with tracks from both platforms
+- Intelligent shuffle algorithm that prevents consecutive tracks from the same artist and minimizes album repetition
+- Custom audio playback controls with timeline display
+- Mobile-friendly responsive design
 
 ## Available Scripts
 
@@ -63,8 +73,26 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/a
 
 ### Deployment
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+The project is set up for GitHub Pages deployment using GitHub Actions.
 
-### `npm run build` fails to minify
+#### Automated Deployment
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+The repository is configured with a GitHub Actions workflow that automatically deploys the app to GitHub Pages when changes are pushed to the main branch. The workflow:
+
+1. Builds the React application
+2. Uploads the build artifacts to GitHub Pages
+3. Deploys the application automatically
+
+To enable GitHub Pages deployment:
+
+1. Go to your repository's Settings tab
+2. Navigate to "Pages" section
+3. Under "Build and deployment", select "GitHub Actions" as the source
+4. The site will be published at: https://dmcphillips13.github.io/percentage-playlists/
+
+### Environment Variables
+
+The application requires the following environment variables for API access:
+
+- `REACT_APP_SPOTIFY_CLIENT_ID`: Your Spotify API client ID
+- `REACT_APP_SOUNDCLOUD_CLIENT_ID`: Your SoundCloud API client ID

@@ -52,16 +52,21 @@ export default function SoundCloudSongPlaylists({
         <ul style={{ listStyle: 'none', padding: 0 }}>
           {matchingPlaylists.map((pl) => (
             <li key={pl.id} style={{ marginBottom: '12px' }}>
-              <a
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  onPlaylistSelect(pl);
+              <button
+                onClick={() => onPlaylistSelect(pl)}
+                style={{ 
+                  textDecoration: 'none', 
+                  color: '#1DB954', 
+                  fontSize: '18px',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: 0,
+                  textAlign: 'left'
                 }}
-                style={{ textDecoration: 'none', color: '#1DB954', fontSize: '18px' }}
               >
                 {pl.title} – {pl.track_count} tracks
-              </a>
+              </button>
             </li>
           ))}
         </ul>

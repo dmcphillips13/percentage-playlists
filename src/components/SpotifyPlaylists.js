@@ -9,20 +9,21 @@ export default function SpotifyPlaylists({ playlists, onPlaylistClick }) {
     <ul style={{ listStyle: 'none', padding: 0 }}>
       {playlists.map((playlist) => (
         <li key={playlist.id} style={{ marginBottom: '12px' }}>
-          <a
-            href="#"
-            onClick={(e) => {
-              e.preventDefault();
-              onPlaylistClick(playlist);
-            }}
+          <button
+            onClick={() => onPlaylistClick(playlist)}
             style={{
               textDecoration: 'none',
               color: '#1DB954',
-              fontSize: '18px'
+              fontSize: '18px',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              padding: 0,
+              textAlign: 'left'
             }}
           >
             <strong>{playlist.name}</strong> — {playlist.tracks.total} tracks
-          </a>
+          </button>
         </li>
       ))}
     </ul>

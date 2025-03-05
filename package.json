@@ -2,6 +2,7 @@
   "name": "percentage-playlists",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://dmcphillips13.github.io/percentage-playlists",
   "dependencies": {
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
@@ -38,6 +39,7 @@
     ]
   },
   "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "prettier": "^3.2.5",
     "prettier-plugin-tailwindcss": "^0.5.14",
     "tailwindcss": "^3.4.3"

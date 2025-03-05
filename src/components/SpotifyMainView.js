@@ -10,8 +10,9 @@ export default function SpotifyMainView({ onBack }) {
   const [playlists, setPlaylists] = useState([]);
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
   const [selectedTrack, setSelectedTrack] = useState(null);
-  const [playingTrackId, setPlayingTrackId] = useState(null);
-  const [isPlaying, setIsPlaying] = useState(false);
+  // Track IDs managed by PlaybackContext now, these remain for backwards compatibility
+  const [playingTrackId] = useState(null);
+  const [isPlaying] = useState(false);
 
   const { pauseTrack, playTrack } = useContext(PlaybackContext);
 

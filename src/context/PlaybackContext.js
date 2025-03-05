@@ -26,8 +26,8 @@ export const PlaybackProvider = ({ children }) => {
   const [trackDuration, setTrackDuration] = useState(0);
   // Toggle for shuffle mode
   const [shuffleMode, setShuffleMode] = useState(false);
-  // Original track order for when shuffle is turned off
-  const [originalTrackOrder, setOriginalTrackOrder] = useState([]);
+  // Original track order for when shuffle is turned off - keeping for potential future use
+  const [, setOriginalTrackOrder] = useState([]);
   // Shuffled track indices
   const [shuffledIndices, setShuffledIndices] = useState([]);
   // Current track position in the shuffled array
