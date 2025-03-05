@@ -14,13 +14,15 @@ export default function PlaybackBar() {
     currentPosition,
     trackDuration,
     seekToPosition,
+    shuffleMode,
+    toggleShuffle
   } = useContext(PlaybackContext);
-  
+
   // State for the slider input value
   const [sliderValue, setSliderValue] = useState(0);
   // State to track whether user is currently dragging the slider
   const [isDragging, setIsDragging] = useState(false);
-  
+
   // Format time in MM:SS format
   const formatTime = (ms) => {
     const totalSeconds = Math.floor(ms / 1000);
@@ -35,13 +37,13 @@ export default function PlaybackBar() {
       setSliderValue(currentPosition);
     }
   }, [currentPosition, isDragging]);
-  
+
   // Handle slider change events
   const handleSliderChange = (e) => {
     const value = parseInt(e.target.value, 10);
     setSliderValue(value);
   };
-  
+
   // Handle slider interaction events
   const handleSliderMouseDown = () => setIsDragging(true);
   const handleSliderMouseUp = () => {
@@ -53,7 +55,7 @@ export default function PlaybackBar() {
     setIsDragging(false);
     seekToPosition(sliderValue);
   };
-  
+
   // If nothing is playing, show a minimal placeholder.
   if (!currentPlaylist || currentTrackIndex === null) {
     return (
@@ -108,15 +110,47 @@ export default function PlaybackBar() {
           {formatTime(trackDuration)}
         </span>
       </div>
-      
+
       {/* Track info and controls */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <div>{currentTrack.name || currentTrack.title}</div>
           <div style={{ fontSize: '12px' }}>{currentPlaylist.title || currentPlaylist.name}</div>
         </div>
-        <div>
-          <button onClick={skipBackward} style={{ marginRight: '10px', background: 'transparent', border: 'none', color: '#fff', fontSize: '20px', cursor: 'pointer' }}>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          {/* Shuffle button */}
+          <button
+            onClick={toggleShuffle}
+            style={{
+              marginRight: '15px',
+              background: 'transparent',
+              border: 'none',
+              color: shuffleMode ? '#1DB954' : '#888',
+              fontSize: '16px',
+              cursor: 'pointer',
+              position: 'relative'
+            }}
+            title={shuffleMode ? "Shuffle on (intelligent shuffle)" : "Shuffle off"}
+          >
+            🔀
+            {shuffleMode &&
+              <span style={{
+                position: 'absolute',
+                bottom: '-5px',
+                right: '-8px',
+                backgroundColor: '#1DB954',
+                borderRadius: '50%',
+                width: '8px',
+                height: '8px'
+              }}></span>
+            }
+          </button>
+
+          {/* Playback controls */}
+          <button
+            onClick={skipBackward}
+            style={{ marginRight: '10px', background: 'transparent', border: 'none', color: '#fff', fontSize: '20px', cursor: 'pointer' }}
+          >
             ⏮
           </button>
           <button
@@ -131,7 +165,10 @@ export default function PlaybackBar() {
           >
             {isPlaying ? '⏸' : '▶️'}
           </button>
-          <button onClick={skipForward} style={{ background: 'transparent', border: 'none', color: '#fff', fontSize: '20px', cursor: 'pointer' }}>
+          <button
+            onClick={skipForward}
+            style={{ background: 'transparent', border: 'none', color: '#fff', fontSize: '20px', cursor: 'pointer' }}
+          >
             ⏭
           </button>
         </div>

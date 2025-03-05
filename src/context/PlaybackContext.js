@@ -24,6 +24,14 @@ export const PlaybackProvider = ({ children }) => {
   const [currentPosition, setCurrentPosition] = useState(0);
   // Track duration in ms (for timeline display)
   const [trackDuration, setTrackDuration] = useState(0);
+  // Toggle for shuffle mode
+  const [shuffleMode, setShuffleMode] = useState(false);
+  // Original track order for when shuffle is turned off
+  const [originalTrackOrder, setOriginalTrackOrder] = useState([]);
+  // Shuffled track indices
+  const [shuffledIndices, setShuffledIndices] = useState([]);
+  // Current track position in the shuffled array
+  const [currentShufflePosition, setCurrentShufflePosition] = useState(0);
 
   // Spotify Web Playback SDK state
   const [spotifyPlayer, setSpotifyPlayer] = useState(null);
@@ -96,6 +104,24 @@ export const PlaybackProvider = ({ children }) => {
 
   // Global function to play a track.
   const playTrack = (playlist, index, source, track) => {
+    // When playing a new playlist, check if shuffle is enabled
+    if (!currentPlaylist || currentPlaylist.id !== playlist.id) {
+      // If this is a new playlist and shuffle is on, create shuffled indices
+      if (shuffleMode) {
+        const shuffled = intelligentShuffle(playlist);
+        setShuffledIndices(shuffled);
+        // Find where the selected track is in the shuffled order
+        const shufflePosition = shuffled.indexOf(index);
+        if (shufflePosition !== -1) {
+          setCurrentShufflePosition(shufflePosition);
+        }
+      } else {
+        // If shuffle is off, store the original order for later use
+        const originalOrder = Array.from({ length: playlist.tracks.length }, (_, i) => i);
+        setOriginalTrackOrder(originalOrder);
+      }
+    }
+    
     setCurrentPlaylist(playlist);
     setCurrentTrackIndex(index);
     setCurrentSource(source);
@@ -269,10 +295,24 @@ export const PlaybackProvider = ({ children }) => {
   // Update skip functions to pause current playback if switching sources.
   const skipForward = async () => {
     if (currentPlaylist && currentTrackIndex !== null) {
-      let nextIndex = currentTrackIndex + 1;
-      if (nextIndex >= currentPlaylist.tracks.length) {
-        nextIndex = 0;
+      let nextIndex;
+        
+      if (shuffleMode) {
+        // In shuffle mode, get the next track from shuffled indices
+        let nextShufflePosition = currentShufflePosition + 1;
+        if (nextShufflePosition >= shuffledIndices.length) {
+          nextShufflePosition = 0;
+        }
+        nextIndex = shuffledIndices[nextShufflePosition];
+        setCurrentShufflePosition(nextShufflePosition);
+      } else {
+        // In normal mode, just get the next sequential track
+        nextIndex = currentTrackIndex + 1;
+        if (nextIndex >= currentPlaylist.tracks.length) {
+          nextIndex = 0;
+        }
       }
+      
       const nextTrack = currentPlaylist.tracks[nextIndex];
       if (isPlaying && currentSource && currentSource !== nextTrack.source) {
         await pauseTrack();
@@ -284,10 +324,24 @@ export const PlaybackProvider = ({ children }) => {
 
   const skipBackward = async () => {
     if (currentPlaylist && currentTrackIndex !== null) {
-      let prevIndex = currentTrackIndex - 1;
-      if (prevIndex < 0) {
-        prevIndex = currentPlaylist.tracks.length - 1;
+      let prevIndex;
+      
+      if (shuffleMode) {
+        // In shuffle mode, get the previous track from shuffled indices
+        let prevShufflePosition = currentShufflePosition - 1;
+        if (prevShufflePosition < 0) {
+          prevShufflePosition = shuffledIndices.length - 1;
+        }
+        prevIndex = shuffledIndices[prevShufflePosition];
+        setCurrentShufflePosition(prevShufflePosition);
+      } else {
+        // In normal mode, just get the previous sequential track
+        prevIndex = currentTrackIndex - 1;
+        if (prevIndex < 0) {
+          prevIndex = currentPlaylist.tracks.length - 1;
+        }
       }
+      
       const prevTrack = currentPlaylist.tracks[prevIndex];
       if (isPlaying && currentSource && currentSource !== prevTrack.source) {
         await pauseTrack();
@@ -418,6 +472,113 @@ export const PlaybackProvider = ({ children }) => {
     return () => clearInterval(intervalId);
   }, [isPlaying, currentSource, spotifyToken]);
 
+  // Intelligent shuffle function
+  const intelligentShuffle = (playlist) => {
+    if (!playlist || !playlist.tracks || playlist.tracks.length === 0) {
+      return [];
+    }
+    
+    const tracks = playlist.tracks;
+    const trackCount = tracks.length;
+    
+    // Create array of indices
+    const indices = Array.from({ length: trackCount }, (_, i) => i);
+    
+    // Store original order
+    setOriginalTrackOrder(indices);
+    
+    // Modified Fisher-Yates shuffle with intelligent constraints
+    const shuffled = [...indices];
+    
+    // First pass: standard Fisher-Yates shuffle to get a random base
+    for (let i = trackCount - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    
+    // Second pass: apply intelligent constraints
+    for (let i = 1; i < trackCount; i++) {
+      const currentTrack = tracks[shuffled[i]];
+      const prevTrack = tracks[shuffled[i - 1]];
+      
+      // Check if consecutive tracks have the same artist
+      const sameArtist = hasSameArtist(currentTrack, prevTrack);
+      
+      // Check if tracks are from the same album (for Spotify)
+      const sameAlbum = hasSameAlbum(currentTrack, prevTrack);
+      
+      // If constraints violated, find a better position
+      if (sameArtist || sameAlbum) {
+        // Look for a swap candidate that doesn't violate constraints
+        for (let j = i + 1; j < Math.min(trackCount, i + 10); j++) {
+          if (j >= trackCount) break;
+          
+          const candidateTrack = tracks[shuffled[j]];
+          
+          // Check if swapping would resolve the artist constraint
+          const wouldResolveSameArtist = !hasSameArtist(candidateTrack, prevTrack);
+          
+          // Check if swapping would resolve the album constraint
+          const wouldResolveSameAlbum = !hasSameAlbum(candidateTrack, prevTrack);
+          
+          // Only swap if it improves the situation
+          if (wouldResolveSameArtist && wouldResolveSameAlbum) {
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            break;
+          }
+        }
+      }
+    }
+    
+    return shuffled;
+  };
+  
+  // Helper to check if two tracks have the same artist
+  const hasSameArtist = (track1, track2) => {
+    if (!track1 || !track2) return false;
+    
+    if (track1.source === 'spotify' && track2.source === 'spotify') {
+      // For Spotify tracks, compare artist IDs
+      const track1Artists = track1.artists?.map(a => a.id) || [];
+      const track2Artists = track2.artists?.map(a => a.id) || [];
+      return track1Artists.some(id => track2Artists.includes(id));
+    }
+    
+    if (track1.source === 'soundcloud' && track2.source === 'soundcloud') {
+      // For SoundCloud tracks, compare user IDs
+      return track1.user?.id === track2.user?.id;
+    }
+    
+    return false; // Different sources can't have the same artist
+  };
+  
+  // Helper to check if two tracks have the same album (Spotify only)
+  const hasSameAlbum = (track1, track2) => {
+    if (!track1 || !track2) return false;
+    
+    if (track1.source === 'spotify' && track2.source === 'spotify') {
+      return track1.album?.id === track2.album?.id;
+    }
+    
+    return false; // SoundCloud doesn't have album concept
+  };
+  
+  // Toggle shuffle mode
+  const toggleShuffle = () => {
+    const newShuffleMode = !shuffleMode;
+    setShuffleMode(newShuffleMode);
+    
+    if (newShuffleMode) {
+      // If turning on shuffle, generate new shuffled indices
+      const shuffled = intelligentShuffle(currentPlaylist);
+      setShuffledIndices(shuffled);
+      
+      // Find current track in shuffled array
+      const currentPosition = shuffled.findIndex(idx => idx === currentTrackIndex);
+      setCurrentShufflePosition(currentPosition !== -1 ? currentPosition : 0);
+    }
+  };
+
   return (
     <PlaybackContext.Provider
       value={{
@@ -434,6 +595,9 @@ export const PlaybackProvider = ({ children }) => {
         skipBackward,
         seekToPosition,
         spotifyPlayer,
+        shuffleMode,
+        toggleShuffle,
+        shuffledIndices
       }}
     >
       {children}
