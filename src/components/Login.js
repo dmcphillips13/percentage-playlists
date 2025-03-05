@@ -1,9 +1,11 @@
 import React, { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
+import { getCallbackUrl } from '../utils/urlHelpers';
 
 // Spotify configuration
 const SPOTIFY_CLIENT_ID = process.env.REACT_APP_SPOTIFY_CLIENT_ID;
-const SPOTIFY_REDIRECT_URI = 'http://localhost:3000/callback?provider=spotify';
+// Use our URL helper to get the correct redirect URI
+const SPOTIFY_REDIRECT_URI = getCallbackUrl('spotify');
 const SPOTIFY_AUTH_ENDPOINT = 'https://accounts.spotify.com/authorize';
 const SPOTIFY_RESPONSE_TYPE = 'token';
 const SPOTIFY_SCOPES = [
@@ -19,7 +21,8 @@ const SPOTIFY_SCOPES = [
 
 // SoundCloud configuration for PKCE
 const SOUNDCLOUD_CLIENT_ID = process.env.REACT_APP_SOUNDCLOUD_CLIENT_ID;
-const SOUNDCLOUD_REDIRECT_URI = 'http://localhost:3000/callback?provider=soundcloud';
+// Use our URL helper to get the correct redirect URI
+const SOUNDCLOUD_REDIRECT_URI = getCallbackUrl('soundcloud');
 const SOUNDCLOUD_AUTH_ENDPOINT = 'https://secure.soundcloud.com/authorize';
 const SOUNDCLOUD_RESPONSE_TYPE = 'code'; // Using authorization code flow
 

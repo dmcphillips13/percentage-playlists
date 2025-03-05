@@ -1,11 +1,13 @@
 import React, { createContext, useState, useEffect } from 'react';
+import { getCallbackUrl, parseGitHubPagesUrl, getBaseUrl } from '../utils/urlHelpers';
 
 export const AuthContext = createContext();
 
 // SoundCloud configuration — update these with your actual credentials
 const SOUNDCLOUD_CLIENT_ID = process.env.REACT_APP_SOUNDCLOUD_CLIENT_ID;
 const SOUNDCLOUD_CLIENT_SECRET = process.env.REACT_APP_SOUNDCLOUD_CLIENT_SECRET;
-const SOUNDCLOUD_REDIRECT_URI = 'http://localhost:3000/callback?provider=soundcloud';
+// Use our URL helper to get the correct redirect URI
+const SOUNDCLOUD_REDIRECT_URI = getCallbackUrl('soundcloud');
 // Use the endpoint as per the docs that require the client secret:
 const SOUNDCLOUD_TOKEN_ENDPOINT = 'https://secure.soundcloud.com/oauth/token';
 
@@ -19,21 +21,25 @@ export const AuthProvider = ({ children }) => {
     let storedSpotifyToken = window.localStorage.getItem('spotify_token');
     let storedSoundcloudToken = window.localStorage.getItem('soundcloud_token');
 
+    // Parse URL, handling GitHub Pages SPA routing as needed
+    const { search: effectiveSearch, hash } = parseGitHubPagesUrl();
+    
     // Use URLSearchParams to check for provider information in the URL
-    const searchParams = new URLSearchParams(window.location.search);
+    const searchParams = new URLSearchParams(effectiveSearch);
     const provider = searchParams.get('provider'); // expected values: "spotify" or "soundcloud"
-
+    
     // --- Spotify: (using implicit flow) ---
-    if (provider === 'spotify' && window.location.hash) {
-      const hash = window.location.hash.substring(1); // remove the '#' character
-      const params = new URLSearchParams(hash);
+    if (provider === 'spotify' && hash) {
+      const hashContent = hash.substring(1); // remove the '#' character
+      const params = new URLSearchParams(hashContent);
       const tokenFromUrl = params.get('access_token');
       if (tokenFromUrl) {
         storedSpotifyToken = tokenFromUrl;
         window.localStorage.setItem('spotify_token', tokenFromUrl);
       }
-      // Clean URL
-      window.history.pushState("", document.title, window.location.pathname);
+      // Clean URL - ensure we keep the correct base path
+      const basePath = getBaseUrl();
+      window.history.pushState("", document.title, `${basePath}/`);
     }
 
     // --- SoundCloud: using PKCE Authorization Code Flow with client secret ---
@@ -73,8 +79,9 @@ export const AuthProvider = ({ children }) => {
             } else {
               console.error("Token exchange error:", data);
             }
-            // Clean URL so that the code parameter is removed.
-            window.history.pushState("", document.title, window.location.pathname);
+            // Clean URL so that the code parameter is removed, maintain correct base path
+            const basePath = getBaseUrl();
+            window.history.pushState("", document.title, `${basePath}/`);
           })
           .catch((err) =>
             console.error('Error exchanging SoundCloud code for token:', err)

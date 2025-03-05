@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { AuthProvider, AuthContext } from './context/AuthContext';
 import { PlaybackProvider } from './context/PlaybackContext';
 import Login from './components/Login';
@@ -8,6 +8,7 @@ import SoundCloudMainView from './components/SoundCloudMainView';
 import SharedPlaylistsMainView from './components/SharedPlaylistsMainView';
 import SharedPlaylistDetail from './components/SharedPlaylistDetail';
 import PlaybackBar from './components/PlaybackBar';
+import { parseGitHubPagesUrl } from './utils/urlHelpers';
 
 function AppContent() {
   const { spotifyToken, soundcloudToken } = useContext(AuthContext);
@@ -15,6 +16,24 @@ function AppContent() {
   const [view, setView] = useState('landing');
   // For shared detail view, store the selected shared playlist.
   const [selectedSharedPlaylist, setSelectedSharedPlaylist] = useState(null);
+  
+  // Handle GitHub Pages routing
+  useEffect(() => {
+    // Check if we need to handle GitHub Pages SPA routing
+    const { search } = parseGitHubPagesUrl();
+    
+    // If we have a callback parameter, we're in the OAuth flow, ignore
+    if (search.includes('provider=')) {
+      return;
+    }
+    
+    // If we have a GitHub Pages redirect pattern, try to extract the view
+    const routeMatch = search.match(/^\?\/(spotify|soundcloud|shared)/i);
+    if (routeMatch) {
+      const newView = routeMatch[1].toLowerCase();
+      setView(newView);
+    }
+  }, []);
 
   const handleLogout = () => {
     window.localStorage.removeItem('spotify_token');
