@@ -1,12 +1,10 @@
 /**
- * Utility functions for handling URLs in both development and production (GitHub Pages) environments
+ * Utility functions for handling URLs in both development and production environments
  */
 
-// Get the base URL for the app based on environment
+// Get the base URL for the app (empty for Vercel deployment)
 export const getBaseUrl = () => {
-  return process.env.NODE_ENV === 'production'
-    ? '/percentage-playlists'
-    : '';
+  return '';
 };
 
 // Generate a full app URL with the correct base path
@@ -18,31 +16,28 @@ export const getAppUrl = (path = '/') => {
 };
 
 // Create a callback URL for OAuth providers
-export const getCallbackUrl = (provider) => {
-  const baseUrl = process.env.NODE_ENV === 'production'
-    ? 'https://dmcphillips13.github.io/percentage-playlists'
-    : 'http://localhost:3000';
+export const getCallbackUrl = (provider, config = null) => {
+  // In development, use localhost directly
+  // In production with server, use the BASE_URL provided by the server API
+  // Otherwise fallback to window.location.origin
+  let baseUrl;
+  
+  if (process.env.NODE_ENV === 'development') {
+    baseUrl = 'http://localhost:3000';
+  } else if (config && config.BASE_URL) {
+    baseUrl = config.BASE_URL;
+  } else {
+    baseUrl = window.location.origin;
+  }
     
   return `${baseUrl}/callback?provider=${provider}`;
 };
 
-// Parse the URL to handle GitHub Pages SPA routing
+// Parse the URL for callback handling
 export const parseGitHubPagesUrl = () => {
-  const search = window.location.search;
-  const hash = window.location.hash;
-  
-  // Handle GitHub Pages SPA routing format
-  // Check if this is a GitHub Pages redirect with '?/callback' pattern
-  const ghPagesMatch = search.match(/^\?\/(callback.*)$/);
-  let effectiveSearch = search;
-  
-  if (ghPagesMatch) {
-    // Convert GitHub Pages format to normal format
-    effectiveSearch = `?${ghPagesMatch[1]}`;
-  }
-  
+  // Just return the search and hash as is - no special handling needed for Vercel
   return {
-    search: effectiveSearch,
-    hash: hash
+    search: window.location.search,
+    hash: window.location.hash
   };
 };

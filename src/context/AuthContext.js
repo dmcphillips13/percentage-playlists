@@ -1,22 +1,42 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { getCallbackUrl, parseGitHubPagesUrl, getBaseUrl } from '../utils/urlHelpers';
+import axios from 'axios';
 
 export const AuthContext = createContext();
-
-// SoundCloud configuration — update these with your actual credentials
-const SOUNDCLOUD_CLIENT_ID = process.env.REACT_APP_SOUNDCLOUD_CLIENT_ID;
-const SOUNDCLOUD_CLIENT_SECRET = process.env.REACT_APP_SOUNDCLOUD_CLIENT_SECRET;
-// Use our URL helper to get the correct redirect URI
-const SOUNDCLOUD_REDIRECT_URI = getCallbackUrl('soundcloud');
-// Use the endpoint as per the docs that require the client secret:
-const SOUNDCLOUD_TOKEN_ENDPOINT = 'https://secure.soundcloud.com/oauth/token';
 
 export const AuthProvider = ({ children }) => {
   const [spotifyToken, setSpotifyToken] = useState('');
   const [soundcloudToken, setSoundcloudToken] = useState('');
-  const [user, setUser] = useState(null); // For example, you might fetch Spotify user data here
+  const [user, setUser] = useState(null);
+  const [config, setConfig] = useState({
+    SOUNDCLOUD_CLIENT_ID: '',
+    SPOTIFY_CLIENT_ID: ''
+  });
+
+  // First, fetch config from server or use environment variables in dev mode
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      // In development mode with npm run dev, use React environment variables directly
+      setConfig({
+        SPOTIFY_CLIENT_ID: process.env.REACT_APP_SPOTIFY_CLIENT_ID,
+        SOUNDCLOUD_CLIENT_ID: process.env.REACT_APP_SOUNDCLOUD_CLIENT_ID
+      });
+    } else {
+      // In production or when using the Express server, fetch from API
+      axios.get('/api/config')
+        .then(response => {
+          setConfig(response.data);
+        })
+        .catch(error => {
+          console.error('Error fetching config:', error);
+        });
+    }
+  }, []);
 
   useEffect(() => {
+    // Only proceed if we have config loaded
+    if (!config.SPOTIFY_CLIENT_ID || !config.SOUNDCLOUD_CLIENT_ID) return;
+
     // Check local storage for tokens
     let storedSpotifyToken = window.localStorage.getItem('spotify_token');
     let storedSoundcloudToken = window.localStorage.getItem('soundcloud_token');
@@ -42,7 +62,7 @@ export const AuthProvider = ({ children }) => {
       window.history.pushState("", document.title, `${basePath}/`);
     }
 
-    // --- SoundCloud: using PKCE Authorization Code Flow with client secret ---
+    // --- SoundCloud: using PKCE Authorization Code Flow with server-side token exchange ---
     if (provider === 'soundcloud') {
       // Check if the URL has a "code" parameter (authorization code)
       const code = searchParams.get('code');
@@ -51,47 +71,69 @@ export const AuthProvider = ({ children }) => {
         const codeVerifier = window.localStorage.getItem('soundcloud_code_verifier');
         if (!codeVerifier) {
           console.error("No code verifier found for SoundCloud.");
-        }
-        // Prepare a request body to exchange the authorization code for an access token.
-        const body = new URLSearchParams();
-        body.append('client_id', SOUNDCLOUD_CLIENT_ID);
-        body.append('client_secret', SOUNDCLOUD_CLIENT_SECRET);
-        // Use the exact registered redirect URI:
-        body.append('redirect_uri', SOUNDCLOUD_REDIRECT_URI);
-        body.append('grant_type', 'authorization_code');
-        body.append('code', code);
-        body.append('code_verifier', codeVerifier);
+        } else {
+          // Handle token exchange based on environment
+          if (process.env.NODE_ENV === 'development') {
+            // In development mode, handle the token exchange directly using environment variables
+            const body = new URLSearchParams();
+            body.append('client_id', process.env.REACT_APP_SOUNDCLOUD_CLIENT_ID);
+            body.append('client_secret', process.env.REACT_APP_SOUNDCLOUD_CLIENT_SECRET);
+            body.append('redirect_uri', getCallbackUrl('soundcloud', config));
+            body.append('grant_type', 'authorization_code');
+            body.append('code', code);
+            body.append('code_verifier', codeVerifier);
 
-        // POST to SoundCloud's token endpoint (which now requires the client secret)
-        fetch(SOUNDCLOUD_TOKEN_ENDPOINT, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-          },
-          body: body.toString()
-        })
-          .then((response) => response.json())
-          .then((data) => {
-            if (data.access_token) {
-              storedSoundcloudToken = data.access_token;
-              window.localStorage.setItem('soundcloud_token', data.access_token);
-              setSoundcloudToken(data.access_token);
-            } else {
-              console.error("Token exchange error:", data);
-            }
-            // Clean URL so that the code parameter is removed, maintain correct base path
-            const basePath = getBaseUrl();
-            window.history.pushState("", document.title, `${basePath}/`);
-          })
-          .catch((err) =>
-            console.error('Error exchanging SoundCloud code for token:', err)
-          );
+            fetch('https://secure.soundcloud.com/oauth/token', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+              },
+              body: body.toString()
+            })
+              .then(response => response.json())
+              .then(data => {
+                if (data.access_token) {
+                  storedSoundcloudToken = data.access_token;
+                  window.localStorage.setItem('soundcloud_token', data.access_token);
+                  setSoundcloudToken(data.access_token);
+                } else {
+                  console.error("Token exchange error:", data);
+                }
+                // Clean URL
+                const basePath = getBaseUrl();
+                window.history.pushState("", document.title, `${basePath}/`);
+              })
+              .catch(err => console.error('Error exchanging SoundCloud code for token:', err));
+          } else {
+            // In production, use our server API to exchange the code for a token
+            axios.post('/api/soundcloud/token', {
+              code,
+              code_verifier: codeVerifier,
+              redirect_uri: getCallbackUrl('soundcloud', config)
+            })
+              .then((response) => {
+                if (response.data.access_token) {
+                  storedSoundcloudToken = response.data.access_token;
+                  window.localStorage.setItem('soundcloud_token', response.data.access_token);
+                  setSoundcloudToken(response.data.access_token);
+                } else {
+                  console.error("Token exchange error:", response.data);
+                }
+                // Clean URL so that the code parameter is removed, maintain correct base path
+                const basePath = getBaseUrl();
+                window.history.pushState("", document.title, `${basePath}/`);
+              })
+              .catch((err) =>
+                console.error('Error exchanging SoundCloud code for token:', err)
+              );
+          }
+        }
       }
     }
 
     setSpotifyToken(storedSpotifyToken);
     setSoundcloudToken(storedSoundcloudToken);
-  }, []);
+  }, [config]);
 
   // Optional: Fetch Spotify user profile if needed.
   useEffect(() => {
@@ -113,6 +155,7 @@ export const AuthProvider = ({ children }) => {
         spotifyToken,
         soundcloudToken,
         user,
+        config,
         setSpotifyToken,
         setSoundcloudToken
       }}

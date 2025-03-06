@@ -2,7 +2,7 @@
 
 A web application for managing and playing music playlists from Spotify and SoundCloud. Includes features like intelligent shuffle, cross-platform playlist sharing, and custom playback controls.
 
-This project is deployed at: [https://dmcphillips13.github.io/percentage-playlists](https://dmcphillips13.github.io/percentage-playlists)
+This project can be deployed to Vercel or GitHub Pages.
 
 ## Features
 
@@ -16,13 +16,22 @@ This project is deployed at: [https://dmcphillips13.github.io/percentage-playlis
 
 In the project directory, you can run:
 
-### `npm start`
+### `npm run dev`
 
-Runs the app in the development mode.\
+Runs the React app in development mode without the Express server.\
 Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
 
 The page will reload when you make changes.\
 You may also see any lint errors in the console.
+
+**Note:** When using `npm run dev`, you need to set the REACT_APP_* environment variables in your .env file.
+
+### `npm start`
+
+Runs the Express server with the production build of the React app.\
+Open [http://localhost:3001](http://localhost:3001) to view it in your browser.
+
+This is the recommended way to test the production setup locally.
 
 ### `npm test`
 
@@ -73,26 +82,58 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/a
 
 ### Deployment
 
-The project is set up for GitHub Pages deployment using GitHub Actions.
+The project is set up to be deployed to either Vercel or GitHub Pages.
 
-#### Automated Deployment
+#### Vercel Deployment
 
-The repository is configured with a GitHub Actions workflow that automatically deploys the app to GitHub Pages when changes are pushed to the main branch. The workflow:
+To deploy the project to Vercel:
 
-1. Builds the React application
-2. Uploads the build artifacts to GitHub Pages
-3. Deploys the application automatically
+1. Push your code to a GitHub, GitLab, or Bitbucket repository
+2. Sign up or log in to [Vercel](https://vercel.com)
+3. Click "New Project" and import your repository
+4. Add the required environment variables in the "Environment Variables" section:
+   - `SPOTIFY_CLIENT_ID`
+   - `SOUNDCLOUD_CLIENT_ID`
+   - `SOUNDCLOUD_CLIENT_SECRET`
+5. Click "Deploy"
 
-To enable GitHub Pages deployment:
+The project includes a `vercel.json` configuration file that handles:
+- Node.js server deployment
+- Build settings for React frontend
+- Routing configuration for the Express API and SPA
+- Secure server-side handling of sensitive credentials
 
-1. Go to your repository's Settings tab
-2. Navigate to "Pages" section
-3. Under "Build and deployment", select "GitHub Actions" as the source
-4. The site will be published at: https://dmcphillips13.github.io/percentage-playlists/
+#### GitHub Pages Deployment
+
+Alternatively, the project can be deployed to GitHub Pages:
+
+1. Ensure the `homepage` field in `package.json` is set to your GitHub Pages URL
+2. Go to your repository's Settings tab
+3. Navigate to "Pages" section
+4. Under "Build and deployment", select "GitHub Actions" as the source
+5. The site will be published at: https://[username].github.io/percentage-playlists/
 
 ### Environment Variables
 
-The application requires the following environment variables for API access:
+The project supports two modes of operation, each with different environment variable requirements:
+
+#### Production Mode (Express Server)
+
+When running in production or with `npm start`, the application uses server-side environment variables that are not exposed to client-side JavaScript:
+
+- `SPOTIFY_CLIENT_ID`: Your Spotify API client ID
+- `SOUNDCLOUD_CLIENT_ID`: Your SoundCloud API client ID
+- `SOUNDCLOUD_CLIENT_SECRET`: Your SoundCloud API client secret
+- `PORT`: (Optional) Port for the Express server (defaults to 3001)
+
+#### Development Mode
+
+When running with `npm run dev`, the React development server requires client-side environment variables:
 
 - `REACT_APP_SPOTIFY_CLIENT_ID`: Your Spotify API client ID
 - `REACT_APP_SOUNDCLOUD_CLIENT_ID`: Your SoundCloud API client ID
+- `REACT_APP_SOUNDCLOUD_CLIENT_SECRET`: Your SoundCloud API client secret
+
+A `.env.example` file is included in the project to show the required variables for both modes.
+
+**Security Note:** In production, the Express server keeps your credentials secure. In development mode, credentials are embedded in the client-side code for convenience but should not be used in a production environment.

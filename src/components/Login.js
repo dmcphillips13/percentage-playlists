@@ -2,10 +2,7 @@ import React, { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { getCallbackUrl } from '../utils/urlHelpers';
 
-// Spotify configuration
-const SPOTIFY_CLIENT_ID = process.env.REACT_APP_SPOTIFY_CLIENT_ID;
-// Use our URL helper to get the correct redirect URI
-const SPOTIFY_REDIRECT_URI = getCallbackUrl('spotify');
+// Authentication endpoints
 const SPOTIFY_AUTH_ENDPOINT = 'https://accounts.spotify.com/authorize';
 const SPOTIFY_RESPONSE_TYPE = 'token';
 const SPOTIFY_SCOPES = [
@@ -19,10 +16,6 @@ const SPOTIFY_SCOPES = [
   'streaming'
 ];
 
-// SoundCloud configuration for PKCE
-const SOUNDCLOUD_CLIENT_ID = process.env.REACT_APP_SOUNDCLOUD_CLIENT_ID;
-// Use our URL helper to get the correct redirect URI
-const SOUNDCLOUD_REDIRECT_URI = getCallbackUrl('soundcloud');
 const SOUNDCLOUD_AUTH_ENDPOINT = 'https://secure.soundcloud.com/authorize';
 const SOUNDCLOUD_RESPONSE_TYPE = 'code'; // Using authorization code flow
 
@@ -47,10 +40,12 @@ async function generateCodeChallenge(codeVerifier) {
 }
 
 export default function Login() {
-  const { spotifyToken, soundcloudToken } = useContext(AuthContext);
+  const { spotifyToken, soundcloudToken, config } = useContext(AuthContext);
+  const SPOTIFY_REDIRECT_URI = getCallbackUrl('spotify', config);
+  const SOUNDCLOUD_REDIRECT_URI = getCallbackUrl('soundcloud', config);
 
   // Build Spotify login URL (implicit flow)
-  const spotifyLoginUrl = `${SPOTIFY_AUTH_ENDPOINT}?client_id=${SPOTIFY_CLIENT_ID}&redirect_uri=${encodeURIComponent(
+  const spotifyLoginUrl = `${SPOTIFY_AUTH_ENDPOINT}?client_id=${config.SPOTIFY_CLIENT_ID}&redirect_uri=${encodeURIComponent(
     SPOTIFY_REDIRECT_URI
   )}&scope=${encodeURIComponent(SPOTIFY_SCOPES.join(' '))}&response_type=${SPOTIFY_RESPONSE_TYPE}`;
 
@@ -61,7 +56,7 @@ export default function Login() {
     // Save the code verifier for later use in exchanging the code for a token.
     window.localStorage.setItem('soundcloud_code_verifier', codeVerifier);
     // Build the SoundCloud login URL with PKCE parameters.
-    const soundcloudLoginUrl = `${SOUNDCLOUD_AUTH_ENDPOINT}?client_id=${SOUNDCLOUD_CLIENT_ID}&redirect_uri=${encodeURIComponent(
+    const soundcloudLoginUrl = `${SOUNDCLOUD_AUTH_ENDPOINT}?client_id=${config.SOUNDCLOUD_CLIENT_ID}&redirect_uri=${encodeURIComponent(
       SOUNDCLOUD_REDIRECT_URI
     )}&response_type=${SOUNDCLOUD_RESPONSE_TYPE}&code_challenge=${codeChallenge}&code_challenge_method=S256`;
     // Redirect the browser to SoundCloud's login page.
