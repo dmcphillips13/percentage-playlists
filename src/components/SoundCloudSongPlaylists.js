@@ -44,7 +44,7 @@ export default function SoundCloudSongPlaylists({
         &larr; Back
       </button>
       <h2 style={{ color: "#fff" }}>
-        Playlists including "{track.title}"
+        Playlists including &quot;{track.title}&quot;
       </h2>
       {loading ? (
         <p style={{ color: "#bbb" }}>Loading playlists...</p>

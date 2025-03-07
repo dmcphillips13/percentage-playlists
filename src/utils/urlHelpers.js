@@ -38,6 +38,15 @@ export const getCallbackUrl = (provider, config = null) => {
   ) {
     return config.SOUNDCLOUD_REDIRECT_URI;
   }
+  
+  // For Spotify in production, use the custom redirect URI if available
+  if (
+    provider === 'spotify' &&
+    process.env.NODE_ENV !== 'development' &&
+    config && config.SPOTIFY_REDIRECT_URI
+  ) {
+    return config.SPOTIFY_REDIRECT_URI;
+  }
 
   return `${baseUrl}/callback?provider=${provider}`;
 };

@@ -31,6 +31,7 @@ export const AuthProvider = ({ children }) => {
           console.error('Error fetching config:', error);
         });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -135,6 +136,7 @@ export const AuthProvider = ({ children }) => {
 
     setSpotifyToken(storedSpotifyToken);
     setSoundcloudToken(storedSoundcloudToken);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config]);
 
   // Optional: Fetch Spotify user profile if needed.

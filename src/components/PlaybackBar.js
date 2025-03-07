@@ -15,7 +15,10 @@ export default function PlaybackBar() {
     trackDuration,
     seekToPosition,
     shuffleMode,
-    toggleShuffle
+    toggleShuffle,
+    playbackError,
+    setPlaybackError,
+    isMobileBrowser
   } = useContext(PlaybackContext);
 
   // State for the slider input value
@@ -89,6 +92,74 @@ export default function PlaybackBar() {
         flexDirection: 'column',
       }}
     >
+      {/* Playback Error Message (if any) */}
+      {playbackError && (
+        <div 
+          onClick={() => {
+            // Handle iOS Spotify link click
+            if (playbackError.type === 'spotify_ios' && currentTrack && currentTrack.external_urls && currentTrack.external_urls.spotify) {
+              // Try both methods to open Spotify app
+              const spotifyAppUrl = `spotify:track:${currentTrack.id}`;
+              const webUrl = currentTrack.external_urls.spotify;
+              
+              // First try the URI scheme
+              setTimeout(() => {
+                window.location.href = spotifyAppUrl;
+                
+                // If that doesn't work, try the web URL after a short delay
+                setTimeout(() => {
+                  window.open(webUrl, '_blank');
+                }, 300);
+              }, 100);
+            }
+          }}
+          style={{
+            backgroundColor: playbackError.type === 'spotify_ios' ? '#1DB954' : '#ff5500',
+            color: 'white',
+            padding: '8px',
+            borderRadius: '4px',
+            marginBottom: '8px',
+            fontSize: '12px',
+            textAlign: 'center',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            cursor: playbackError.type === 'spotify_ios' ? 'pointer' : 'default'
+          }}
+        >
+          <span style={{ 
+            flex: 1, 
+            textAlign: 'center',
+            paddingLeft: playbackError.type === 'spotify_ios' ? '24px' : '0'
+          }}>
+            {playbackError.type === 'spotify_ios' ? (
+              <>
+                <span style={{ marginRight: '8px' }}>🎧</span>
+                {playbackError.message}
+              </>
+            ) : (
+              playbackError.message
+            )}
+          </span>
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              setPlaybackError(null);
+            }}
+            style={{
+              backgroundColor: 'transparent',
+              border: 'none',
+              color: 'white',
+              fontSize: '14px',
+              cursor: 'pointer',
+              marginLeft: '8px'
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+      
       {/* Timeline slider */}
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px', width: '100%' }}>
         <span style={{ marginRight: '10px', fontSize: '12px' }}>
@@ -115,7 +186,10 @@ export default function PlaybackBar() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <div>{currentTrack.name || currentTrack.title}</div>
-          <div style={{ fontSize: '12px' }}>{currentPlaylist.title || currentPlaylist.name}</div>
+          <div style={{ fontSize: '12px' }}>
+            {currentPlaylist.title || currentPlaylist.name}
+            {isMobileBrowser && currentSource === 'spotify' && ' (Open in Spotify app)'}
+          </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center' }}>
           {/* Shuffle button */}
@@ -158,6 +232,10 @@ export default function PlaybackBar() {
               if (isPlaying) {
                 pauseTrack();
               } else {
+                // Clear any previous errors when trying to play
+                if (playbackError) {
+                  setPlaybackError(null);
+                }
                 playTrack(currentPlaylist, currentTrackIndex, currentSource, currentTrack);
               }
             }}

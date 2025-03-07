@@ -2,14 +2,28 @@
 
 ## Spotify Developer Dashboard Setup
 
+### Development Environment Setup
+
 1. Log in to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/)
-2. Select your app (or create a new one)
+2. Select your app (or create a new one) for development
 3. Click "Edit Settings"
-4. Under "Redirect URIs", add **all** of these URLs:
-   - For local development:
-     ```
-     http://localhost:3000/callback?provider=spotify
-     ```
+4. Under "Redirect URIs", add the following URL:
+   ```
+   http://localhost:3000/callback?provider=spotify
+   ```
+5. Click "Save"
+6. Copy the Client ID to your `.env` file:
+   ```
+   REACT_APP_SPOTIFY_CLIENT_ID=your_development_client_id
+   ```
+
+### Production Environment Setup
+
+For production, you have two options:
+
+#### Option 1: Use the same app with multiple redirect URIs
+
+1. Using the same Spotify app, add additional redirect URIs:
    - For Vercel deployment:
      ```
      https://your-vercel-app-name.vercel.app/callback?provider=spotify
@@ -18,7 +32,26 @@
      ```
      https://your-custom-domain.com/callback?provider=spotify
      ```
-5. Click "Save"
+2. Add this value to your production environment variables:
+   ```
+   SPOTIFY_CLIENT_ID=your_spotify_client_id
+   ```
+
+#### Option 2: Create a separate app for production (recommended)
+
+1. Create a new app in the Spotify Developer Dashboard specifically for production
+2. Set the redirect URI to your production URL:
+   ```
+   https://your-production-domain.com/callback/spotify
+   ```
+   Note: This can be a custom path different from the development URL format
+3. Add these values to your production environment variables:
+   ```
+   SPOTIFY_CLIENT_ID=your_production_client_id
+   SPOTIFY_REDIRECT_URI=https://your-production-domain.com/callback/spotify
+   ```
+
+The application will automatically use the correct configuration based on the environment.
 
 ## SoundCloud Developer Dashboard Setup
 

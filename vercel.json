@@ -9,7 +9,8 @@
       "src": "package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "build"
+        "distDir": "build",
+        "buildCommand": "chmod +x vercel-build.sh && ./vercel-build.sh"
       }
     }
   ],
@@ -21,6 +22,8 @@
     { "src": "/logo512.png", "dest": "/logo512.png" },
     { "src": "/manifest.json", "dest": "/manifest.json" },
     { "src": "/robots.txt", "dest": "/robots.txt" },
+    { "src": "/callback", "dest": "/server.js" },
+    { "src": "/callback/(.*)", "dest": "/server.js" },
     { "src": "/(.*)", "dest": "/server.js" }
   ]
 }

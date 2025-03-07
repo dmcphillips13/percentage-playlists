@@ -49,6 +49,7 @@ app.get('/api/config', (req, res) => {
     SPOTIFY_CLIENT_ID: process.env.SPOTIFY_CLIENT_ID,
     SOUNDCLOUD_CLIENT_ID: process.env.SOUNDCLOUD_CLIENT_ID,
     SOUNDCLOUD_REDIRECT_URI: process.env.SOUNDCLOUD_REDIRECT_URI,
+    SPOTIFY_REDIRECT_URI: process.env.SPOTIFY_REDIRECT_URI,
     BASE_URL: baseUrl
   });
 });

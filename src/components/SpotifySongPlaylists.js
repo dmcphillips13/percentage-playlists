@@ -73,7 +73,7 @@ export default function SpotifySongPlaylists({
       </button>
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
         <h2 style={{ color: '#fff', marginRight: '10px' }}>
-          Playlists including "{track.name}"
+          Playlists including &quot;{track.name}&quot;
         </h2>
         <button
           onClick={(e) => {

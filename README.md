@@ -95,7 +95,8 @@ To deploy the project to Vercel:
    - `SPOTIFY_CLIENT_ID`
    - `SOUNDCLOUD_CLIENT_ID`
    - `SOUNDCLOUD_CLIENT_SECRET`
-   - `SOUNDCLOUD_REDIRECT_URI` (optional, for custom redirect path)
+   - `SPOTIFY_REDIRECT_URI` (optional, for custom Spotify redirect path)
+   - `SOUNDCLOUD_REDIRECT_URI` (optional, for custom SoundCloud redirect path)
 5. Click "Deploy"
 
 The project includes a `vercel.json` configuration file that handles:
@@ -127,6 +128,7 @@ When running in production or with `npm start`, the application uses server-side
 - `SPOTIFY_CLIENT_ID`: Your Spotify API client ID
 - `SOUNDCLOUD_CLIENT_ID`: Your SoundCloud API client ID
 - `SOUNDCLOUD_CLIENT_SECRET`: Your SoundCloud API client secret
+- `SPOTIFY_REDIRECT_URI`: (Optional) Custom redirect URI for Spotify in production
 - `SOUNDCLOUD_REDIRECT_URI`: (Optional) Custom redirect URI for SoundCloud in production
 - `PORT`: (Optional) Port for the Express server (defaults to 3001)
 
