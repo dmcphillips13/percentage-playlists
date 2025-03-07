@@ -31,7 +31,38 @@ export const AuthProvider = ({ children }) => {
           console.error('Error fetching config:', error);
         });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Store a deployment version in localStorage to handle redeployments
+  const [appVersion, setAppVersion] = useState('1.0');
+
+  // Check if we need to clear tokens due to a deployment
+  useEffect(() => {
+    // Initialize or retrieve the current app version
+    axios.get('/api/version')
+      .then(response => {
+        const serverVersion = response.data.version || '1.0';
+        const storedVersion = window.localStorage.getItem('app_version');
+
+        if (!storedVersion || storedVersion !== serverVersion) {
+          // Clear tokens when version changes (new deployment)
+          console.log('App version changed, clearing authentication tokens');
+          window.localStorage.removeItem('spotify_token');
+          window.localStorage.removeItem('soundcloud_token');
+          window.localStorage.setItem('app_version', serverVersion);
+          setAppVersion(serverVersion);
+        } else {
+          setAppVersion(storedVersion);
+        }
+      })
+      .catch(error => {
+        console.error('Error fetching app version:', error);
+        // Default to current stored version, or set a new one if none exists
+        const storedVersion = window.localStorage.getItem('app_version') || '1.0';
+        window.localStorage.setItem('app_version', storedVersion);
+        setAppVersion(storedVersion);
+      });
   }, []);
 
   useEffect(() => {
@@ -44,11 +75,11 @@ export const AuthProvider = ({ children }) => {
 
     // Parse URL, handling GitHub Pages SPA routing as needed
     const { search: effectiveSearch, hash } = parseGitHubPagesUrl();
-    
+
     // Use URLSearchParams to check for provider information in the URL
     const searchParams = new URLSearchParams(effectiveSearch);
     const provider = searchParams.get('provider'); // expected values: "spotify" or "soundcloud"
-    
+
     // --- Spotify: (using implicit flow) ---
     if (provider === 'spotify' && hash) {
       const hashContent = hash.substring(1); // remove the '#' character
@@ -134,10 +165,68 @@ export const AuthProvider = ({ children }) => {
       }
     }
 
-    setSpotifyToken(storedSpotifyToken);
-    setSoundcloudToken(storedSoundcloudToken);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Validate tokens before setting them
+    if (storedSpotifyToken) {
+      validateSpotifyToken(storedSpotifyToken).then(isValid => {
+        if (isValid) {
+          setSpotifyToken(storedSpotifyToken);
+        } else {
+          // Clear invalid token
+          window.localStorage.removeItem('spotify_token');
+          setSpotifyToken('');
+        }
+      });
+    } else {
+      setSpotifyToken('');
+    }
+
+    if (storedSoundcloudToken) {
+      validateSoundCloudToken(storedSoundcloudToken).then(isValid => {
+        if (isValid) {
+          setSoundcloudToken(storedSoundcloudToken);
+        } else {
+          // Clear invalid token
+          window.localStorage.removeItem('soundcloud_token');
+          setSoundcloudToken('');
+        }
+      });
+    } else {
+      setSoundcloudToken('');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config]);
+
+  // Function to validate Spotify token
+  const validateSpotifyToken = async (token) => {
+    if (!token) return false;
+
+    try {
+      const response = await fetch('https://api.spotify.com/v1/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      return response.status === 200;
+    } catch (error) {
+      console.error('Error validating Spotify token:', error);
+      return false;
+    }
+  };
+
+  // Function to validate SoundCloud token
+  const validateSoundCloudToken = async (token) => {
+    if (!token) return false;
+
+    try {
+      const response = await fetch('https://api.soundcloud.com/me', {
+        headers: { Authorization: `OAuth ${token}` }
+      });
+
+      return response.status === 200;
+    } catch (error) {
+      console.error('Error validating SoundCloud token:', error);
+      return false;
+    }
+  };
 
   // Optional: Fetch Spotify user profile if needed.
   useEffect(() => {
@@ -160,8 +249,11 @@ export const AuthProvider = ({ children }) => {
         soundcloudToken,
         user,
         config,
+        appVersion,
         setSpotifyToken,
-        setSoundcloudToken
+        setSoundcloudToken,
+        validateSpotifyToken,
+        validateSoundCloudToken
       }}
     >
       {children}

@@ -11,22 +11,58 @@ import PlaybackBar from './components/PlaybackBar';
 import { parseGitHubPagesUrl } from './utils/urlHelpers';
 
 function AppContent() {
-  const { spotifyToken, soundcloudToken } = useContext(AuthContext);
+  const {
+    spotifyToken,
+    soundcloudToken,
+    validateSpotifyToken,
+    validateSoundCloudToken,
+    appVersion
+  } = useContext(AuthContext);
+
   // view can be: "landing", "spotify", "soundcloud", "shared", "sharedDetail"
   const [view, setView] = useState('landing');
   // For shared detail view, store the selected shared playlist.
   const [selectedSharedPlaylist, setSelectedSharedPlaylist] = useState(null);
-  
+  // Track token validation state
+  const [tokensValid, setTokensValid] = useState({ spotify: !!spotifyToken, soundcloud: !!soundcloudToken });
+
+  // Validate tokens whenever they change or app version changes
+  useEffect(() => {
+    const validateTokens = async () => {
+      // Only validate if we have tokens
+      if (spotifyToken) {
+        const spotifyValid = await validateSpotifyToken(spotifyToken);
+        setTokensValid(prev => ({ ...prev, spotify: spotifyValid }));
+      } else {
+        setTokensValid(prev => ({ ...prev, spotify: false }));
+      }
+
+      if (soundcloudToken) {
+        const soundcloudValid = await validateSoundCloudToken(soundcloudToken);
+        setTokensValid(prev => ({ ...prev, soundcloud: soundcloudValid }));
+      } else {
+        setTokensValid(prev => ({ ...prev, soundcloud: false }));
+      }
+    };
+
+    validateTokens();
+
+    // Add a periodic validation (every 5 minutes)
+    const intervalId = setInterval(validateTokens, 5 * 60 * 1000);
+
+    return () => clearInterval(intervalId);
+  }, [spotifyToken, soundcloudToken, validateSpotifyToken, validateSoundCloudToken, appVersion]);
+
   // Handle GitHub Pages routing
   useEffect(() => {
     // Check if we need to handle GitHub Pages SPA routing
     const { search } = parseGitHubPagesUrl();
-    
+
     // If we have a callback parameter, we're in the OAuth flow, ignore
     if (search.includes('provider=')) {
       return;
     }
-    
+
     // If we have a GitHub Pages redirect pattern, try to extract the view
     const routeMatch = search.match(/^\?\/(spotify|soundcloud|shared)/i);
     if (routeMatch) {
@@ -41,10 +77,14 @@ function AppContent() {
     window.location.reload();
   };
 
-  if (!spotifyToken || !soundcloudToken) {
+  // Show login if any token is missing or invalid
+  if (!tokensValid.spotify || !tokensValid.soundcloud) {
     return (
       <div style={{ background: '#191414', color: '#fff', minHeight: '100vh', padding: '20px', fontFamily: 'Helvetica, Arial, sans-serif' }}>
-        <Login />
+        <Login
+          spotifyNeeded={!tokensValid.spotify}
+          soundcloudNeeded={!tokensValid.soundcloud}
+        />
       </div>
     );
   }

@@ -39,7 +39,7 @@ async function generateCodeChallenge(codeVerifier) {
   return base64String.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-export default function Login() {
+export default function Login({ spotifyNeeded = true, soundcloudNeeded = true }) {
   const { spotifyToken, soundcloudToken, config } = useContext(AuthContext);
   const SPOTIFY_REDIRECT_URI = getCallbackUrl('spotify', config);
   const SOUNDCLOUD_REDIRECT_URI = getCallbackUrl('soundcloud', config);
@@ -98,30 +98,69 @@ export default function Login() {
     margin: '10px'
   };
 
+  // Determine the most specific message
+  let headerMessage = "Please log in to continue";
+
+  if (spotifyNeeded && soundcloudNeeded) {
+    headerMessage = "Please log in with both Spotify and SoundCloud";
+  } else if (spotifyNeeded) {
+    headerMessage = "Please log in with Spotify";
+  } else if (soundcloudNeeded) {
+    headerMessage = "Please log in with SoundCloud";
+  }
+
   return (
     <div style={{ textAlign: 'center' }}>
       <h2 style={{ color: '#fff' }}>
-        Please log in with both Spotify and SoundCloud
+        {headerMessage}
       </h2>
-      {spotifyToken ? (
+
+      {/* Optional message when session expired */}
+      {(!spotifyNeeded || !soundcloudNeeded) && (
+        <p style={{ color: '#ddd', marginBottom: '20px' }}>
+          Your session has expired. Please log in again.
+        </p>
+      )}
+
+      {/* Spotify login button - only show if needed */}
+      {spotifyNeeded ? (
+        spotifyToken ? (
+          <button style={loggedInStyle} disabled>
+            Logged into Spotify
+          </button>
+        ) : (
+          <a href={spotifyLoginUrl} style={spotifyButtonStyle}>
+            Login with Spotify
+          </a>
+        )
+      ) : (
         <button style={loggedInStyle} disabled>
           Logged into Spotify
         </button>
-      ) : (
-        <a href={spotifyLoginUrl} style={spotifyButtonStyle}>
-          Login with Spotify
-        </a>
       )}
-      {soundcloudToken ? (
+
+      {/* SoundCloud login button - only show if needed */}
+      {soundcloudNeeded ? (
+        soundcloudToken ? (
+          <button style={loggedInStyle} disabled>
+            Logged into SoundCloud
+          </button>
+        ) : (
+          // Use a button with an onClick handler because we need to perform async PKCE steps.
+          <button onClick={handleSoundCloudLogin} style={soundcloudButtonStyle}>
+            Login with SoundCloud
+          </button>
+        )
+      ) : (
         <button style={loggedInStyle} disabled>
           Logged into SoundCloud
         </button>
-      ) : (
-        // Use a button with an onClick handler because we need to perform async PKCE steps.
-        <button onClick={handleSoundCloudLogin} style={soundcloudButtonStyle}>
-          Login with SoundCloud
-        </button>
       )}
+
+      {/* Clear storage hint */}
+      <p style={{ color: '#999', fontSize: '12px', marginTop: '40px' }}>
+        If you're having trouble logging in, try clearing your browser cache.
+      </p>
     </div>
   );
 }
