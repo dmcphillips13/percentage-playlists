@@ -184,12 +184,15 @@ export default function PlaybackBar() {
 
       {/* Track info and controls */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <div>{currentTrack.name || currentTrack.title}</div>
-          <div style={{ fontSize: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <span style={{ marginRight: '8px' }}>{currentTrack.name || currentTrack.title}</span>
+          <span style={{ marginRight: '8px', fontSize: '12px', color: '#aaa' }}>
+            {currentTrack.artists ? currentTrack.artists[0].name : (currentTrack.user ? currentTrack.user.username : '')}
+          </span>
+          <span style={{ fontSize: '12px', color: '#888' }}>
             {currentPlaylist.title || currentPlaylist.name}
             {isMobileBrowser && currentSource === 'spotify' && ' (Open in Spotify app)'}
-          </div>
+          </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center' }}>
           {/* Shuffle button */}
