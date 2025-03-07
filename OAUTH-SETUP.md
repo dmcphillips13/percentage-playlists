@@ -22,13 +22,29 @@
 
 ## SoundCloud Developer Dashboard Setup
 
+### Development Environment Setup
+
 1. Log in to the [SoundCloud Developer Portal](https://developers.soundcloud.com/)
-2. Go to your app settings
-3. Under "Redirect URIs", add **all** of these URLs:
-   - For local development:
-     ```
-     http://localhost:3000/callback?provider=soundcloud
-     ```
+2. Create a new app or select your existing app for development
+3. Under "Redirect URIs", add the following URL:
+   ```
+   http://localhost:3000/callback?provider=soundcloud
+   ```
+4. Make sure your app is set to use "Authorization Code Flow with PKCE"
+5. Save your changes
+6. Copy the Client ID and Client Secret to your `.env` file:
+   ```
+   REACT_APP_SOUNDCLOUD_CLIENT_ID=your_development_client_id
+   REACT_APP_SOUNDCLOUD_CLIENT_SECRET=your_development_client_secret
+   ```
+
+### Production Environment Setup
+
+For production, you have two options:
+
+#### Option 1: Use the same app with multiple redirect URIs
+
+1. Using the same SoundCloud app, add additional redirect URIs:
    - For Vercel deployment:
      ```
      https://your-vercel-app-name.vercel.app/callback?provider=soundcloud
@@ -37,8 +53,28 @@
      ```
      https://your-custom-domain.com/callback?provider=soundcloud
      ```
-4. Make sure your app is set to use "Authorization Code Flow with PKCE"
-5. Save your changes
+2. Add these values to your production environment variables:
+   ```
+   SOUNDCLOUD_CLIENT_ID=your_soundcloud_client_id
+   SOUNDCLOUD_CLIENT_SECRET=your_soundcloud_client_secret
+   ```
+
+#### Option 2: Create a separate app for production (recommended)
+
+1. Create a new app in the SoundCloud Developer Portal specifically for production
+2. Set the redirect URI to your production URL:
+   ```
+   https://your-production-domain.com/callback/soundcloud
+   ```
+   Note: This can be a custom path different from the development URL format
+3. Add these values to your production environment variables:
+   ```
+   SOUNDCLOUD_CLIENT_ID=your_production_client_id
+   SOUNDCLOUD_CLIENT_SECRET=your_production_client_secret
+   SOUNDCLOUD_REDIRECT_URI=https://your-production-domain.com/callback/soundcloud
+   ```
+
+The application will automatically use the correct configuration based on the environment.
 
 ## Troubleshooting OAuth Errors
 

@@ -95,6 +95,7 @@ To deploy the project to Vercel:
    - `SPOTIFY_CLIENT_ID`
    - `SOUNDCLOUD_CLIENT_ID`
    - `SOUNDCLOUD_CLIENT_SECRET`
+   - `SOUNDCLOUD_REDIRECT_URI` (optional, for custom redirect path)
 5. Click "Deploy"
 
 The project includes a `vercel.json` configuration file that handles:
@@ -102,6 +103,8 @@ The project includes a `vercel.json` configuration file that handles:
 - Build settings for React frontend
 - Routing configuration for the Express API and SPA
 - Secure server-side handling of sensitive credentials
+
+For setting up OAuth providers with different development and production environments, see [OAUTH-SETUP.md](OAUTH-SETUP.md).
 
 #### GitHub Pages Deployment
 
@@ -124,6 +127,7 @@ When running in production or with `npm start`, the application uses server-side
 - `SPOTIFY_CLIENT_ID`: Your Spotify API client ID
 - `SOUNDCLOUD_CLIENT_ID`: Your SoundCloud API client ID
 - `SOUNDCLOUD_CLIENT_SECRET`: Your SoundCloud API client secret
+- `SOUNDCLOUD_REDIRECT_URI`: (Optional) Custom redirect URI for SoundCloud in production
 - `PORT`: (Optional) Port for the Express server (defaults to 3001)
 
 #### Development Mode
@@ -135,5 +139,7 @@ When running with `npm run dev`, the React development server requires client-si
 - `REACT_APP_SOUNDCLOUD_CLIENT_SECRET`: Your SoundCloud API client secret
 
 A `.env.example` file is included in the project to show the required variables for both modes.
+
+**Separate Development and Production SoundCloud Apps**: You can use different SoundCloud apps for development and production environments. See [OAUTH-SETUP.md](OAUTH-SETUP.md) for detailed instructions.
 
 **Security Note:** In production, the Express server keeps your credentials secure. In development mode, credentials are embedded in the client-side code for convenience but should not be used in a production environment.

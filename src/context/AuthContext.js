@@ -106,10 +106,12 @@ export const AuthProvider = ({ children }) => {
               .catch(err => console.error('Error exchanging SoundCloud code for token:', err));
           } else {
             // In production, use our server API to exchange the code for a token
+            // Use the redirect URI from config which can be custom in production
+            const redirectUri = getCallbackUrl('soundcloud', config);
             axios.post('/api/soundcloud/token', {
               code,
               code_verifier: codeVerifier,
-              redirect_uri: getCallbackUrl('soundcloud', config)
+              redirect_uri: redirectUri
             })
               .then((response) => {
                 if (response.data.access_token) {

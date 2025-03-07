@@ -21,7 +21,7 @@ export const getCallbackUrl = (provider, config = null) => {
   // In production with server, use the BASE_URL provided by the server API
   // Otherwise fallback to window.location.origin
   let baseUrl;
-  
+
   if (process.env.NODE_ENV === 'development') {
     baseUrl = 'http://localhost:3000';
   } else if (config && config.BASE_URL) {
@@ -29,7 +29,16 @@ export const getCallbackUrl = (provider, config = null) => {
   } else {
     baseUrl = window.location.origin;
   }
-    
+
+  // For SoundCloud in production, use the custom redirect URI if available
+  if (
+    provider === 'soundcloud' &&
+    process.env.NODE_ENV !== 'development' &&
+    config && config.SOUNDCLOUD_REDIRECT_URI
+  ) {
+    return config.SOUNDCLOUD_REDIRECT_URI;
+  }
+
   return `${baseUrl}/callback?provider=${provider}`;
 };
 
