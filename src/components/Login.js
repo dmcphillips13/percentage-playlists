@@ -98,15 +98,24 @@ export default function Login({ spotifyNeeded = true, soundcloudNeeded = true })
     margin: '10px'
   };
 
-  // Determine the most specific message
-  let headerMessage = "Please log in to continue";
+  // Generate welcome message
+  let headerMessage = "Login to Access Music Services";
+  let subMessage = "";
 
+  // Generate appropriate sub-message based on login state
   if (spotifyNeeded && soundcloudNeeded) {
-    headerMessage = "Please log in with both Spotify and SoundCloud";
+    subMessage = "Log in to either service to start using the app";
   } else if (spotifyNeeded) {
-    headerMessage = "Please log in with Spotify";
+    subMessage = "Log in with Spotify to access more features";
   } else if (soundcloudNeeded) {
-    headerMessage = "Please log in with SoundCloud";
+    subMessage = "Log in with SoundCloud to access more features";
+  } else {
+    subMessage = "You're fully logged in!";
+  }
+  
+  // No login needed, handle differently
+  if (!spotifyNeeded && !soundcloudNeeded) {
+    headerMessage = "You're ready to go!";
   }
 
   return (
@@ -115,12 +124,9 @@ export default function Login({ spotifyNeeded = true, soundcloudNeeded = true })
         {headerMessage}
       </h2>
 
-      {/* Optional message when session expired */}
-      {(!spotifyNeeded || !soundcloudNeeded) && (
-        <p style={{ color: '#ddd', marginBottom: '20px' }}>
-          Your session has expired. Please log in again.
-        </p>
-      )}
+      <p style={{ color: '#ddd', marginBottom: '20px' }}>
+        {subMessage}
+      </p>
 
       {/* Spotify login button - only show if needed */}
       {spotifyNeeded ? (

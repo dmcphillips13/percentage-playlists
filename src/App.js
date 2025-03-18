@@ -2,7 +2,6 @@ import React, { useState, useContext, useEffect } from 'react';
 import { AuthProvider, AuthContext } from './context/AuthContext';
 import { PlaybackProvider } from './context/PlaybackContext';
 import Login from './components/Login';
-import LoggedInLandingPage from './components/LoggedInLandingPage';
 import SpotifyMainView from './components/SpotifyMainView';               // Spotify SpotifyMainView
 import SoundCloudMainView from './components/SoundCloudMainView';
 import SharedPlaylistsMainView from './components/SharedPlaylistsMainView';
@@ -77,40 +76,115 @@ function AppContent() {
     window.location.reload();
   };
 
-  // Show login if any token is missing or invalid
-  if (!tokensValid.spotify || !tokensValid.soundcloud) {
-    return (
-      <div style={{ background: '#191414', color: '#fff', minHeight: '100vh', padding: '20px', fontFamily: 'Helvetica, Arial, sans-serif' }}>
+  // Are we able to view shared playlists? (requires both tokens)
+  const canViewSharedPlaylists = tokensValid.spotify && tokensValid.soundcloud;
+
+  // Helper to handle service selection
+  const handleServiceSelection = (serviceType) => {
+    if (serviceType === 'spotify' && tokensValid.spotify) {
+      setView('spotify');
+    } else if (serviceType === 'soundcloud' && tokensValid.soundcloud) {
+      setView('soundcloud');
+    } else if (serviceType === 'shared' && canViewSharedPlaylists) {
+      setView('shared');
+    }
+  };
+
+  return (
+    <div style={{ background: '#191414', color: '#fff', minHeight: '100vh', paddingBottom: '60px', fontFamily: 'Helvetica, Arial, sans-serif' }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px' }}>
+        <h1 style={{ margin: 0 }}>My Playlists</h1>
+        {(tokensValid.spotify || tokensValid.soundcloud) && (
+          <button
+            onClick={handleLogout}
+            style={{
+              background: 'transparent',
+              border: '1px solid #1DB954',
+              borderRadius: '4px',
+              color: '#1DB954',
+              padding: '8px 12px',
+              cursor: 'pointer',
+            }}
+          >
+            Logout
+          </button>
+        )}
+      </header>
+
+      {/* Always show login section for not-yet-authenticated providers */}
+      <div style={{ marginBottom: '30px' }}>
         <Login
           spotifyNeeded={!tokensValid.spotify}
           soundcloudNeeded={!tokensValid.soundcloud}
         />
       </div>
-    );
-  }
 
-  return (
-    <div style={{ background: '#191414', color: '#fff', minHeight: '100vh', paddingBottom: '60px', fontFamily: 'Helvetica, Arial, sans-serif' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h1 style={{ margin: 0 }}>My Playlists</h1>
-        <button
-          onClick={handleLogout}
-          style={{
-            background: 'transparent',
-            border: '1px solid #1DB954',
-            borderRadius: '4px',
-            color: '#1DB954',
-            padding: '8px 12px',
-            cursor: 'pointer',
-          }}
-        >
-          Logout
-        </button>
-      </header>
-      {view === 'landing' && <LoggedInLandingPage onSelectView={setView} />}
-      {view === 'spotify' && <SpotifyMainView onBack={() => setView('landing')} />}
-      {view === 'soundcloud' && <SoundCloudMainView onBack={() => setView('landing')} />}
-      {view === 'shared' && (
+      {/* Show available service buttons when at least one provider is authenticated */}
+      {(tokensValid.spotify || tokensValid.soundcloud) && (
+        <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+          {tokensValid.spotify && (
+            <button
+              onClick={() => handleServiceSelection('spotify')}
+              style={{
+                padding: '12px 24px',
+                margin: '10px',
+                backgroundColor: '#1DB954',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              Spotify Playlists
+            </button>
+          )}
+
+          {tokensValid.soundcloud && (
+            <button
+              onClick={() => handleServiceSelection('soundcloud')}
+              style={{
+                padding: '12px 24px',
+                margin: '10px',
+                backgroundColor: '#ff5500',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              SoundCloud Playlists
+            </button>
+          )}
+
+          <button
+            onClick={() => handleServiceSelection('shared')}
+            disabled={!canViewSharedPlaylists}
+            style={{
+              padding: '12px 24px',
+              margin: '10px',
+              backgroundColor: canViewSharedPlaylists ? '#333' : '#666',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: canViewSharedPlaylists ? 'pointer' : 'not-allowed',
+              opacity: canViewSharedPlaylists ? 1 : 0.6
+            }}
+          >
+            Shared Playlists
+          </button>
+        </div>
+      )}
+
+      {/* Main content views */}
+      {view === 'spotify' && tokensValid.spotify && (
+        <SpotifyMainView onBack={() => setView('landing')} />
+      )}
+
+      {view === 'soundcloud' && tokensValid.soundcloud && (
+        <SoundCloudMainView onBack={() => setView('landing')} />
+      )}
+
+      {view === 'shared' && canViewSharedPlaylists && (
         selectedSharedPlaylist ? (
           <SharedPlaylistDetail
             sharedPlaylist={selectedSharedPlaylist}
@@ -127,6 +201,7 @@ function AppContent() {
           />
         )
       )}
+
       {/* The PlaybackBar is always visible */}
       <PlaybackBar />
     </div>
