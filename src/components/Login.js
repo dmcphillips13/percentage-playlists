@@ -63,39 +63,54 @@ export default function Login({ spotifyNeeded = true, soundcloudNeeded = true })
     window.location.href = soundcloudLoginUrl;
   };
 
-  // Button styling (adjust as desired)
+  // Button styling with improved appearance
   const loggedInStyle = {
     display: 'inline-block',
     padding: '12px 24px',
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     color: '#191414',
     textDecoration: 'none',
-    borderRadius: '25px',
+    borderRadius: '30px',
     fontWeight: 'bold',
     margin: '10px',
-    border: '1px solid #ccc'
+    border: 'none',
+    boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
+    transition: 'all 0.2s ease',
+    textTransform: 'uppercase',
+    fontSize: '0.9rem',
+    letterSpacing: '0.5px'
   };
 
   const spotifyButtonStyle = {
     display: 'inline-block',
     padding: '12px 24px',
-    backgroundColor: '#1DB954',
+    background: 'linear-gradient(135deg, #1DB954, #1ED760)',
     color: '#fff',
     textDecoration: 'none',
-    borderRadius: '25px',
+    borderRadius: '30px',
     fontWeight: 'bold',
-    margin: '10px'
+    margin: '10px',
+    boxShadow: '0 2px 4px rgba(29, 185, 84, 0.3)',
+    transition: 'all 0.2s ease',
+    textTransform: 'uppercase',
+    fontSize: '0.9rem',
+    letterSpacing: '0.5px'
   };
 
   const soundcloudButtonStyle = {
     display: 'inline-block',
     padding: '12px 24px',
-    backgroundColor: '#ff5500',
+    background: 'linear-gradient(135deg, #ff5500, #ff7700)',
     color: '#fff',
     textDecoration: 'none',
-    borderRadius: '25px',
+    borderRadius: '30px',
     fontWeight: 'bold',
-    margin: '10px'
+    margin: '10px',
+    boxShadow: '0 2px 4px rgba(255, 85, 0, 0.3)',
+    transition: 'all 0.2s ease',
+    textTransform: 'uppercase',
+    fontSize: '0.9rem',
+    letterSpacing: '0.5px'
   };
 
   // Generate welcome message
@@ -112,7 +127,7 @@ export default function Login({ spotifyNeeded = true, soundcloudNeeded = true })
   } else {
     subMessage = "You're fully logged in!";
   }
-  
+
   // No login needed, handle differently
   if (!spotifyNeeded && !soundcloudNeeded) {
     headerMessage = "You're ready to go!";
@@ -135,7 +150,18 @@ export default function Login({ spotifyNeeded = true, soundcloudNeeded = true })
             Logged into Spotify
           </button>
         ) : (
-          <a href={spotifyLoginUrl} style={spotifyButtonStyle}>
+          <a
+            href={spotifyLoginUrl}
+            style={spotifyButtonStyle}
+            onMouseOver={(e) => {
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(29, 185, 84, 0.5)';
+              e.currentTarget.style.transform = 'translateY(-2px)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.boxShadow = '0 2px 4px rgba(29, 185, 84, 0.3)';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}
+          >
             Login with Spotify
           </a>
         )
@@ -153,7 +179,18 @@ export default function Login({ spotifyNeeded = true, soundcloudNeeded = true })
           </button>
         ) : (
           // Use a button with an onClick handler because we need to perform async PKCE steps.
-          <button onClick={handleSoundCloudLogin} style={soundcloudButtonStyle}>
+          <button
+            onClick={handleSoundCloudLogin}
+            style={soundcloudButtonStyle}
+            onMouseOver={(e) => {
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 85, 0, 0.5)';
+              e.currentTarget.style.transform = 'translateY(-2px)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.boxShadow = '0 2px 4px rgba(255, 85, 0, 0.3)';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}
+          >
             Login with SoundCloud
           </button>
         )
@@ -164,8 +201,16 @@ export default function Login({ spotifyNeeded = true, soundcloudNeeded = true })
       )}
 
       {/* Clear storage hint */}
-      <p style={{ color: '#999', fontSize: '12px', marginTop: '40px' }}>
-        If you're having trouble logging in, try clearing your browser cache.
+      <p style={{
+        color: 'rgba(255,255,255,0.5)',
+        fontSize: '12px',
+        marginTop: '40px',
+        padding: '8px 16px',
+        background: 'rgba(0,0,0,0.2)',
+        borderRadius: '4px',
+        display: 'inline-block'
+      }}>
+        <span style={{ opacity: 0.8 }}>⚠️</span> If you're having trouble logging in, try clearing your browser cache.
       </p>
     </div>
   );
